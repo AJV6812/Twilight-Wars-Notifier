@@ -473,7 +473,6 @@ async def update():
             users.add(user)
         gamename = game["gamename"]
         gameurl=game["gameurl"]
-        print(gameurl)
         if "justChanged" not in game.keys():
             game["justChanged"]=""
         try:
@@ -482,11 +481,12 @@ async def update():
             peopleinvolved = []
             peopleinvolved = game["users"].split(",")
             await client.channel.send(f"<@"+'> <@'.join(peopleinvolved)+">\n"+gamename+" has mysteriously disappeared, so your notifications have been automatically removed")
+            print(gameurl)
             client.DATABASE["games"].delete_one({"gameurl":gameurl})
             return
         if game["users"]=="":
-            client.DATABASE["games"].delete_one({"gameurl":game["gameurl"]})
-        elif log[0]["event"] == "game over":
+            client.DATABASE["games"].delete_one({"gameurl":game["gameurl"]}) #If everyone's removed their notifications from a game, then there's no point in keeping it aroun
+        elif log[0]["event"] == "game over": #If the game has ended then no point in keeping it around
             peopleinvolved = []
             peopleinvolved = game["users"].split(",")
             await client.channel.send(f"<@"+'> <@'.join(peopleinvolved)+">\n"+gamename+" has ended, so your notifications have been automatically removed")
@@ -494,8 +494,8 @@ async def update():
         for i in range(1,5):
             if str(i) in game.keys():
                 if game[str(i)]=="":
-                    client.DATABASE["games"].update_one({"gameurl":gameurl},{"$unset":{str(i):""}}),
-        if gamesummary["abilityRound"]["inProgress"]:
+                    client.DATABASE["games"].update_one({"gameurl":gameurl},{"$unset":{str(i):""}}) #This doesn't really serve a purpose
+        if gamesummary["abilityRound"]["inProgress"]: #Initialization works differently depending on whether there is an ability in play or not
             waitingplayer = players[gamesummary["abilityRound"]["current"]-1]["user"]["_id"].strip()
             waitingplayername = players[gamesummary["abilityRound"]["current"]-1]["user"]["username"].strip()
             waitingno = gamesummary["abilityRound"]["current"]-1
@@ -506,16 +506,16 @@ async def update():
             waitingno = gamesummary["turn"]["player"]["current"]-1
             abilitytext = ""
         if "0" in game.keys():
-            if waitingplayer in game["0"].keys():
+            if waitingplayer in game["0"].keys(): #If we have records of the person the game is waiting on
                 waitingaction = gamesummary["step"]
                 gameround = gamesummary["round"]
                 gamephase = gamesummary["phase"]
                 gamename = gamesummary["name"]
                 colour = (players[waitingno]["color"])                
                 colour = colours[colour]
-                embed=disnake.Embed(title=gamename,url = gameurl, description = str(f"Waiting for {waitingplayername} to{abilitytext}: {waitingaction}\nRound: {gameround}"),color=colour)
+                embed=disnake.Embed(title=gamename,url = gameurl, description = str(f"Waiting for {waitingplayername} to{abilitytext}: {waitingaction}\nRound: {gameround}"),color=colour)#This creates the embed that notifies people
                 embed.set_author(name="Twilight Imperium Reminder",url=gameurl,icon_url = f"https://www.twilightwars.com/img/faction/{players[waitingno]['faction'].replace(' ','%20')}/symbol.png")
-                if game["lastStep"] == str(gamesummary["step"])+str(waitingplayer) and str(gamesummary["step"])+str(waitingplayer)!= game["justChanged"]:
+                if game["lastStep"] == str(gamesummary["step"])+str(waitingplayer) and str(gamesummary["step"])+str(waitingplayer)!= game["justChanged"]: #This makes sure that the notification is only sent if it hasn't been sent yet and it has been at least 2 minutes since it changed
                     if game["0"][waitingplayer]!="":
                         await client.channel.send(f"The game is waiting for {waitingplayername} <@{'> <@'.join(game['0'][waitingplayer].split(','))}>",embed=embed)
                         print(f"{waitingplayername} was notified")
@@ -529,6 +529,7 @@ async def update():
                     print(f"{waitingplayername} has already been notified")
                 else:
                     print(f"{waitingplayername} will receive a notification next cycle")
+                #Updates the dictionary so that notifications are not sent twice
                 client.DATABASE["games"].update_one({"gameurl":gameurl},{"$set":{"lastStep":str(gamesummary["step"])+str(waitingplayer),"justChanged":game["lastStep"]}})
 
             else:
@@ -551,6 +552,7 @@ async def update():
         count = 0
         events = []
         lastLog = log[count]["_id"]
+        #This very complicated seeming stack of statements just loop through each log until we reach the log that we saw before. It then sends notifications to anyone with notifications set for strategy cards or trade
         if log[count]["_id"] != game["lastLog"]:
             while log[count]["_id"] != game["lastLog"]:
                 if 'user' in log[count].keys():
