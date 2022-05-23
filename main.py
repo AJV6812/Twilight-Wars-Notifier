@@ -18,7 +18,7 @@ async def fetch(session, url):
     async with session.get(url) as response:
         return await response.text()
 
-#This is the command that creates an embed with each notification on it 
+#This is the command that creates an embed with each notification on it. It basically does nothing but hand it off to another function, this is because a number of other commands have the same functionality
 @client.slash_command(name="viewnotifications",description="Provides a list of all notifications",options=[])
 async def view(ctx):
     await ctx.response.defer()
@@ -56,7 +56,7 @@ async def changedefault(ctx,gameurl):
                 view.add_item(select)
                 await interaction.followup.edit_message(message_id=a.id,view=view)
                 usercallback.trackedplayers = interaction.values
-                #
+                #Creates the different players
                 async with client.session.get(gameurl+"/players") as players:
                     try:
                         playeroptions = [(x["user"]["username"].strip(" "),x["user"]["_id"]) for x in json.loads(await players.text())]
@@ -75,6 +75,7 @@ async def changedefault(ctx,gameurl):
             while "trackedplayers" not in dir(usercallback) and timeout>0:
                 await asyncio.sleep(0.1)
                 timeout-=1
+            #Just changes the default dictionary which can then be stored in MongoDB
             defaultdic["TWUser"]=usercallback.trackedplayers[0]
             defaultdic["TWUsername"]=[x[0] for x in playeroptions if x[1]==usercallback.trackedplayers[0]][0]
             if client.DATABASE["user"].find_one({"auid":str(ctx.author.id)}) == None:
@@ -108,6 +109,7 @@ async def changedefault(ctx,gameurl):
    
 @client.slash_command(name="removeall",description="This will delete every notification that you have", options=[disnake.Option(name="confirmation",description="Would you like to remove all notifications Y/N",required=True)])
 async def removeall(ctx,confirmation):
+    #Simply loops through every stored game and removes ctx.author.id
     await ctx.response.defer()
     if "y" == confirmation.lower():
         games=client.DATABASE["games"].find()
@@ -125,7 +127,7 @@ async def removeall_error(ctx,error):
     await ctx.channel.send("<@560022746973601792> something has gone wrong with {ctx.author.user}'s removeall command.")
     await ctx.channel.send(error)
 
-
+#Ignore quicknotify, nobody uses it anyway so you can just pretend it doesn't exist.
 @client.slash_command(name="quicknotify",description="Use default settings to add notifications",options=[disnake.Option(name="gameurl1",description="Please paste a game url",required=True)]+[disnake.Option(name="gameurl"+str(x),description="You may enter more urls",required=False) for x in range(2,26)])
 async def quicknotify(ctx, gameurl1,gameurl2=None,gameurl3=None,gameurl4=None,gameurl5=None,gameurl6=None,gameurl7=None,gameurl8=None,gameurl9=None,gameurl10=None,gameurl11=None,gameurl12=None,gameurl13=None,gameurl14=None,gameurl15=None,gameurl16=None,gameurl17=None,gameurl18=None,gameurl19=None,gameurl20=None,gameurl21=None,gameurl22=None,gameurl23=None,gameurl24=None,gameurl25=None):
     await ctx.response.defer()    
@@ -168,6 +170,7 @@ async def quicknotify_error(ctx,error):
     await ctx.channel.send("<@560022746973601792> something has gone wrong with {ctx.author.user}'s quicknotify command.")
     await ctx.channel.send(error)
 
+#Despite the title, all this does is create an embed with a users notifications on it. It is likely not what you are looking for.
 async def outputnotifications(auid):
     embed = disnake.Embed(title="Current notifications")
     notificationtypes=["When game is waiting on you","When the window changes","When Trade is played","When a Strategy Card is played", "When the game log updates"]
@@ -198,20 +201,20 @@ async def setdefault_error(ctx,error):
     await ctx.channel.send(error)
 
 async def changesettings(values,gameurl,auid,ctx,user=None):
-    game=client.DATABASE["games"].find_one({"gameurl":gameurl})
-    for num in list(range(5)):
+    game=client.DATABASE["games"].find_one({"gameurl":gameurl}) #Grabs the dictionary of games for the specific one we are interested in
+    for num in list(range(5)): #This loops through the 5 settings and removes the author's id from them
         if num!=0 and str(num) in game.keys():
             game[str(num)]=",".join([x for x in game[str(num)].split(",") if x!= auid])
         elif str(num) in game.keys():
             for userp in game[str(num)].keys():
                 game[str(num)][userp]=",".join([x for x in game[str(num)][userp].split(",") if x!= auid])
-    if "0" in values and "1" in values:
+    if "0" in values and "1" in values: #Some settings are incompatible with each other, so if the user selected both of them one is removed
         values.remove("0")
     if "2" in values and "3" in values:
         values.remove("2")
-    if "5" not in values:
+    if "5" not in values: #If the input we received was "5" then we want to skip all this and remove the user from the system (5 means remove notification)
         for value in values:
-            if value!="0":
+            if value!="0": #If it is not 0 then we just add the user's id on
                 if value in game.keys():
                     if game[value]!= "":
                         game[value]=game[value]+","+auid
@@ -220,7 +223,7 @@ async def changesettings(values,gameurl,auid,ctx,user=None):
                 else:
                     game[value]=auid
             else:
-                if user == None:
+                if user == None: #If it is 0 then we need to create a new interaction asking for which username they would like to be notified for. Fun fact for people reading the code, you can have notifications for two people in one game... just nobody has done it yet that I am aware of. Probably spent too much time accounting for those edge cases than investing in readability, speed and accuracy
                     async def usercallback(interaction:disnake.MessageInteraction):
                         await interaction.response.defer()
                         a = await interaction.original_message()
@@ -237,7 +240,7 @@ async def changesettings(values,gameurl,auid,ctx,user=None):
                     view = disnake.ui.View()
                     view.add_item(select)
                     await ctx.followup.send("Please choose your username: ",view=view)
-                    timeout=600
+                    timeout=600 #This is a very clunky timeout system, would not reimplement because it clogs everything else up for the next 5 minutes (not by much but it's still a mess)
                     while "trackedplayers" not in dir(usercallback) and timeout>0:
                         await asyncio.sleep(0.1)
                         timeout-=1
@@ -247,7 +250,7 @@ async def changesettings(values,gameurl,auid,ctx,user=None):
                 for userid in user:
                     if userid in game["0"].keys():
                         if game["0"][userid] != "":
-                            game["0"][userid]=game["0"][userid]+","+auid
+                            game["0"][userid]=game["0"][userid]+","+auid #For each TWID the user's Discord ID is added to the end
                         else:
                             game["0"][userid]=auid
                     else:
@@ -326,15 +329,15 @@ async def setnotification(user,gameurl,log,gamesummary,players,auid):
     game = client.DATABASE["games"].find_one({"gameurl":gameurl})
     f = True
     gamename = gamesummary["name"]
-    if game == None:
+    if game == None: #If the game being requested has never been seen before
         if gamesummary["abilityRound"]["inProgress"]:
             waitingplayer = players[gamesummary["abilityRound"]["current"]-1]["user"]["_id"].strip()
         else:
-            waitingplayer = players[gamesummary["turn"]["player"]["current"]-1]["user"]["_id"].strip()
-        lst = str(gamesummary["step"])+str(waitingplayer)
-        client.DATABASE["games"].insert_one({"gameurl":gameurl,"lastStep":lst,"lastLog":log[0]["_id"],"0":{user:auid},"users":auid,"gamename":gamename,"justChanged":lst})
+            waitingplayer = players[gamesummary["turn"]["player"]["current"]-1]["user"]["_id"].strip() #This is just due to some shenanigans on who the game is actually depending on during the ability round
+        lst = str(gamesummary["step"])+str(waitingplayer) #This is going to be the check that determines whether the game has progressed or not (If the step is the same and the player is the same, then the states are the same) Theoretically in a small game it might be possible to break this during the ability round where the step doesn't change
+        client.DATABASE["games"].insert_one({"gameurl":gameurl,"lastStep":lst,"lastLog":log[0]["_id"],"0":{user:auid},"users":auid,"gamename":gamename,"justChanged":lst}) #Creates the database
     else:
-        if user in game["0"]:
+        if user in game["0"]: #Does the same thing but checks if the player already has a notification for them, in which case they are added onto it
             if auid not in game["0"][user].split(","):
                 updatedids=",".join(game["0"][user].split(",")+[auid])
             else:
@@ -347,11 +350,10 @@ async def setnotification(user,gameurl,log,gamesummary,players,auid):
             client.DATABASE["games"].update_one({"gameurl":gameurl},[{"$set":{"0":{user:updatedids},"users":updatedusers}}])
         else:
             client.DATABASE["games"].update_one({"gameurl":gameurl},[{"$set":{"0":{user:auid}}}])
-    return gamename
-
+    return gamename #Some commands need the gamename returned for output
 @client.slash_command(name="notify",description="Receive notifications for a public game", options=[disnake.Option("gameurl",description="Please paste the url of the game",required=True)])
 async def notify(ctx,gameurl):
-    async def finish(interaction:disnake.MessageInteraction):
+    async def finish(interaction:disnake.MessageInteraction): #Just setting up the responses to the select menus (this can probably be done in a more efficient way)
         if interaction.author.id == ctx.author.id:
             await interaction.response.defer()
             a = await interaction.original_message()
@@ -361,17 +363,17 @@ async def notify(ctx,gameurl):
             view= disnake.ui.View()
             view.add_item(select)
             await interaction.followup.edit_message(message_id=a.id,view=view)
-            gamename = await setnotification(user,gameurl,log,gamesummary,players,str(interaction.author.id))
+            gamename = await setnotification(user,gameurl,log,gamesummary,players,str(interaction.author.id)) #Just sends it off to another function
             await ctx.followup.send(f"A reminder has been placed in {gamename} for {username}")
 
         else:
             await interaction.response.send_message(f"You are not the original author")
     await ctx.response.defer(ephemeral=False)
-    try:
-        async with client.session.get(gameurl+"/players") as players:
+    try: #Uses aiohttp to get the information about the game (it does this twice just in case someone only sent the Game ID rather than the URL
+        async with client.session.get(gameurl+"/players") as players: 
             log,gamesummary,players = [json.loads(x) for x in await asyncio.gather(fetch(client.session,gameurl+"/log"),fetch(client.session,gameurl+"/summary"),fetch(client.session,gameurl+"/players"))]
             playeroptions1 = [(x["user"]["username"].strip(" "),x["user"]["_id"]) for x in players]
-            if players == []:
+            if players == []: #Just in case either private games get patched or someone sends a valid URL that leads to no game (it is possible)
                 raise()
     except:
         try:
@@ -396,7 +398,7 @@ async def notify_error(ctx,error):
     await ctx.channel.send("<@560022746973601792> something has gone wrong with {ctx.author.user}'s notify command.")
     await ctx.channel.send(error)
 
-
+#Does what it says. Not complicated
 @client.slash_command(name="update",description="Trigger the automatic update immediately")
 async def updatecommand(ctx):
     await ctx.response.defer()
@@ -451,25 +453,27 @@ async def help_error(ctx,error):
     await ctx.channel.send("<@560022746973601792> something has gone wrong with {ctx.author.user}'s help command.")
     await ctx.channel.send(error)
 
+
 @tasks.loop(minutes=2)
 async def update():
     start=time.time()
+    #Starts the timer (for data analysis later) sets up all the colours for the embeds grabs the game database tells, me what loop we are up to
     colours = {"magenta":disnake.Colour.magenta(),"black":0,"purple": disnake.Colour.purple(),"red":disnake.Colour.red(),"yellow":disnake.Colour.yellow(), "green":disnake.Colour.green(),"blue":disnake.Colour.blue(),"orange":disnake.Colour.orange()}
     games = client.DATABASE['games'].find()
-    await asyncio.sleep(0)
     print()
     print("Initiating update number: "+str(update.current_loop+1))
     gamestoberemoved = []
     payload = {
         'email':os.environ["EMAIL"],
         'password':os.environ["PASSWORD"]
-    }
-    users= set()
+    } #This is for login later
+    users = set()
     async def getgames(game):
         for user in game["users"].split(","):
             users.add(user)
         gamename = game["gamename"]
         gameurl=game["gameurl"]
+        print(gameurl)
         if "justChanged" not in game.keys():
             game["justChanged"]=""
         log,gamesummary,players = [json.loads(x) for x in await asyncio.gather(fetch(client.session,gameurl+"/log"),fetch(client.session,gameurl+"/summary"),fetch(client.session,gameurl+"/players"))]
