@@ -1,0 +1,606 @@
+import disnake
+from disnake.ext import commands, tasks
+import json
+import time
+import asyncio
+import os
+import pymongo
+import aiohttp
+import sys
+
+
+client = commands.Bot(command_prefix = "/", help_command = None,sync_commands_debug=True, sync_commands=True)
+GUILD = "Another test server?"
+dbclient = pymongo.MongoClient("mongodb+srv://mongo:"+os.environ["MONGO_PASSWORD"]+"@games.tyn0n.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
+client.DATABASE=dbclient["test"]
+#This is so I can get information from the server asynchronously
+async def fetch(session, url):
+    async with session.get(url) as response:
+        return await response.text()
+
+#This is the command that creates an embed with each notification on it 
+@client.slash_command(name="viewnotifications",description="Provides a list of all notifications",options=[])
+async def view(ctx):
+    await ctx.response.defer()
+    embed = await outputnotifications(str(ctx.author.id))
+    await ctx.followup.send("Notifications: ",embed=embed)
+@view.error
+async def view_error(ctx,error):
+    print(error)
+    await ctx.channel.send("<@560022746973601792> something has gone wrong with {ctx.author.user}'s view command.")
+    await ctx.channel.send(error)
+async def changedefault(ctx,gameurl):
+    defaultdic = {"auid":str(ctx.author.id),
+     "settings":"",
+     "TWUser":"",
+     "TWUsername":""}
+    async def finish(interaction:disnake.MessageInteraction):
+        if interaction.author.id == ctx.author.id:
+            #This locks the select box so you can't use it twice, while updating the default dictionary with your settings
+            await interaction.response.defer()
+            a = await interaction.original_message()
+            select= disnake.ui.Select(placeholder=",".join(interaction.values),options=[disnake.SelectOption(label="HMM")],disabled=True)
+            view=disnake.ui.View()
+            view.add_item(select)
+            await interaction.followup.edit_message(message_id=a.id,view=view)
+            answer = 0
+            values = interaction.values
+            defaultdic["settings"]=",".join(interaction.values)
+            #This creates another select menu with the TW Usernames
+            async def usercallback(interaction:disnake.MessageInteraction):
+                #Locks the thingy
+                await interaction.response.defer()
+                a = await interaction.original_message()
+                select= disnake.ui.Select(placeholder=",".join(interaction.values),options=[disnake.SelectOption(label="HMM")],disabled=True)
+                view=disnake.ui.View()
+                view.add_item(select)
+                await interaction.followup.edit_message(message_id=a.id,view=view)
+                usercallback.trackedplayers = interaction.values
+                #
+                async with client.session.get(gameurl+"/players") as players:
+                    try:
+                        playeroptions = [(x["user"]["username"].strip(" "),x["user"]["_id"]) for x in json.loads(await players.text())]
+                        if playeroptions==None or playeroptions==[]:
+                            raise()
+                    except:
+                        await interaction.followup.send(gameurl+" could not be found")
+                        return
+                    options = [disnake.SelectOption(label=x["user"]["username"].strip(" "),value=x["user"]["_id"]) for x in json.loads(await players.text())]
+            select=disnake.ui.Select(options=options,min_values=1,max_values=1)
+            select.callback=usercallback
+            view = disnake.ui.View()
+            view.add_item(select)
+            await ctx.followup.send("Please choose your username: ",view=view)
+            timeout=600
+            while "trackedplayers" not in dir(usercallback) and timeout>0:
+                await asyncio.sleep(0.1)
+                timeout-=1
+            defaultdic["TWUser"]=usercallback.trackedplayers[0]
+            defaultdic["TWUsername"]=[x[0] for x in playeroptions if x[1]==usercallback.trackedplayers[0]][0]
+            if client.DATABASE["user"].find_one({"auid":str(ctx.author.id)}) == None:
+                client.DATABASE["user"].insert_one(defaultdic)
+            else:
+                client.DATABASE["user"].replace_one({"auid":str(ctx.author.id)},defaultdic)
+            embed = await outputnotifications(str(ctx.author.id))
+            await ctx.followup.send("These are your current notifications",embed=embed)
+            return defaultdic
+            games[gameurl][User][ctx.author.id] == answer
+            
+        else:
+            await interaction.response.defer()
+            await ctx.followup.send("You are not the original author")
+        finish.done=True
+    noptions = [
+            "Notify when game is waiting on you (default)",
+            "Notify after every change of window",
+            "Notify when Trade is played",
+            "Notify when a Strategy Card is played",
+            "Notify when game log updates",
+            "Remove notification"
+    ]
+    noptions = [disnake.SelectOption(label=x[1],value=x[0]) for x in enumerate(noptions)]
+    select = disnake.ui.Select(placeholder="Pick a setting: ",options=noptions,min_values=1,max_values=len(noptions)-1)
+    select.callback=finish
+    view = disnake.ui.View(timeout=300)
+    view.add_item(select)
+    await ctx.followup.send("Select all settings that apply (scroll down)",view=view)
+
+   
+@client.slash_command(name="removeall",description="This will delete every notification that you have", options=[disnake.Option(name="confirmation",description="Would you like to remove all notifications Y/N",required=True)])
+async def removeall(ctx,confirmation):
+    await ctx.response.defer()
+    if "y" == confirmation.lower():
+        games=client.DATABASE["games"].find()
+        for ngame in games:
+            value=[]
+            if str(ctx.author.id) in ngame["users"].split(","):
+                await changesettings("5",ngame["gameurl"],str(ctx.author.id),ctx,"0")
+        embed= await outputnotifications(str(ctx.author.id))
+        await ctx.followup.send("Your notifications have been deleted",embed=embed)
+    else:
+        await ctx.followup.send("Confirmation must be 'Y' or 'y'")
+@removeall.error
+async def removeall_error(ctx,error):
+    print(error)
+    await ctx.channel.send("<@560022746973601792> something has gone wrong with {ctx.author.user}'s removeall command.")
+    await ctx.channel.send(error)
+
+
+@client.slash_command(name="quicknotify",description="Use default settings to add notifications",options=[disnake.Option(name="gameurl1",description="Please paste a game url",required=True)]+[disnake.Option(name="gameurl"+str(x),description="You may enter more urls",required=False) for x in range(2,26)])
+async def quicknotify(ctx, gameurl1,gameurl2=None,gameurl3=None,gameurl4=None,gameurl5=None,gameurl6=None,gameurl7=None,gameurl8=None,gameurl9=None,gameurl10=None,gameurl11=None,gameurl12=None,gameurl13=None,gameurl14=None,gameurl15=None,gameurl16=None,gameurl17=None,gameurl18=None,gameurl19=None,gameurl20=None,gameurl21=None,gameurl22=None,gameurl23=None,gameurl24=None,gameurl25=None):
+    await ctx.response.defer()    
+    gameurls=[gameurl1,gameurl2,gameurl3,gameurl4,gameurl5,gameurl6,gameurl7,gameurl8,gameurl9,gameurl10,gameurl11,gameurl12,gameurl13,gameurl14,gameurl15,gameurl16,gameurl17,gameurl18,gameurl19,gameurl20,gameurl21,gameurl22,gameurl23,gameurl24,gameurl25]
+    gameurls=[x for x in gameurls if x!=None]
+    default = client.DATABASE["user"].find_one({"auid":str(ctx.author.id)})
+    if default == None:
+        await ctx.followup.send("No default notification found. Please update your settings in the select boxes below.")
+        default = await changedefault(ctx,gameurl1)
+    timeout=600
+    while default == None and timeout > 0:
+        await asyncio.sleep(1)
+        timeout-=1
+    async def onegame(gameurl):
+        print(gameurl)
+        try:
+            log,gamesummary,players = [json.loads(x) for x in await asyncio.gather(fetch(client.session,gameurl+"/log"),fetch(client.session,gameurl+"/summary"),fetch(client.session,gameurl+"/players"))]
+        except:
+            await ctx.followup.send("Could not find "+gameurl)
+            return
+        playerids = [x["user"]["_id"] for x in players]
+        print(playerids)
+        print(default in playerids)
+        if default["TWUser"] not in playerids:
+            if default["TWUser"]=="":
+                default["TWUser"]=None
+            else:
+                await ctx.followup.send(default["TWUsername"]+" is not part of "+gameurl+"\nPlease use /notify for this game")
+                return
+        await changesettings(default["settings"].split(","),gameurl,str(ctx.author.id),ctx,default["TWUser"])
+        await setnotification(default["TWUser"],gameurl,log,gamesummary,players,str(ctx.author.id))
+    print("Hello")
+    print(gameurls)
+    await asyncio.gather(*[onegame(x) for x in gameurls])
+    embed = await outputnotifications(str(ctx.author.id))
+    await ctx.followup.send("These are your current notifications:",embed=embed)
+@quicknotify.error
+async def quicknotify_error(ctx,error):
+    print(error)
+    await ctx.channel.send("<@560022746973601792> something has gone wrong with {ctx.author.user}'s quicknotify command.")
+    await ctx.channel.send(error)
+
+async def outputnotifications(auid):
+    embed = disnake.Embed(title="Current notifications")
+    notificationtypes=["When game is waiting on you","When the window changes","When Trade is played","When a Strategy Card is played", "When the game log updates"]
+    default=client.DATABASE["user"].find_one({"auid":auid})
+    if default != None:
+        embed.add_field(name="Default",value="Account name: "+default["TWUsername"]+"\n"+"\n".join([notificationtypes[int(x)] for x in default["settings"].split(",")]),inline=False)
+    games=client.DATABASE["games"].find()
+    for ngame in games:
+        value=[]
+        if auid in ngame["users"].split(","):
+            for i in range(1,5):
+                if str(i) in ngame.keys():
+                    if auid in ngame[str(i)].split(","):
+                        value.append(notificationtypes[i])
+            for user in ngame["0"].keys():
+                if auid in ngame[str(0)][user].split(",") and "When game is waiting on you" not in value:
+                    value.append(notificationtypes[0])
+            embed.add_field(name=ngame["gamename"], value="\n".join(value), inline=False)
+    return embed
+@client.slash_command(name="setdefault",description="Sets the default game",options=[disnake.Option(name="gameurl",description="Please paste the url of any game you are part of",required=True)])
+async def setdefault(ctx,gameurl):
+    await ctx.response.defer()
+    await changedefault(ctx,gameurl)
+@setdefault.error
+async def setdefault_error(ctx,error):
+    print(error)
+    await ctx.channel.send("<@560022746973601792> something has gone wrong with {ctx.author.user}'s setdefault command.")
+    await ctx.channel.send(error)
+
+async def changesettings(values,gameurl,auid,ctx,user=None):
+    game=client.DATABASE["games"].find_one({"gameurl":gameurl})
+    for num in list(range(5)):
+        if num!=0 and str(num) in game.keys():
+            game[str(num)]=",".join([x for x in game[str(num)].split(",") if x!= auid])
+        elif str(num) in game.keys():
+            for userp in game[str(num)].keys():
+                game[str(num)][userp]=",".join([x for x in game[str(num)][userp].split(",") if x!= auid])
+    if "0" in values and "1" in values:
+        values.remove("0")
+    if "2" in values and "3" in values:
+        values.remove("2")
+    if "5" not in values:
+        for value in values:
+            if value!="0":
+                if value in game.keys():
+                    if game[value]!= "":
+                        game[value]=game[value]+","+auid
+                    else:
+                        game[value]=auid
+                else:
+                    game[value]=auid
+            else:
+                if user == None:
+                    async def usercallback(interaction:disnake.MessageInteraction):
+                        await interaction.response.defer()
+                        a = await interaction.original_message()
+                        select= disnake.ui.Select(placeholder=",".join(interaction.values),options=[disnake.SelectOption(label="HMM")],disabled=True)
+                        view=disnake.ui.View()
+                        view.add_item(select)
+                        await interaction.followup.edit_message(message_id=a.id,view=view)
+
+                        usercallback.trackedplayers = interaction.values
+                    async with client.session.get(gameurl+"/players") as players:
+                        options = [disnake.SelectOption(label=x["user"]["username"].strip(" "),value=x["user"]["_id"]) for x in json.loads(await players.text())]
+                    select=disnake.ui.Select(options=options,min_values=1,max_values=len(options))
+                    select.callback=usercallback
+                    view = disnake.ui.View()
+                    view.add_item(select)
+                    await ctx.followup.send("Please choose your username: ",view=view)
+                    timeout=600
+                    while "trackedplayers" not in dir(usercallback) and timeout>0:
+                        await asyncio.sleep(0.1)
+                        timeout-=1
+                    user = usercallback.trackedplayers
+                else:
+                    user=[user]
+                for userid in user:
+                    if userid in game["0"].keys():
+                        if game["0"][userid] != "":
+                            game["0"][userid]=game["0"][userid]+","+auid
+                        else:
+                            game["0"][userid]=auid
+                    else:
+                        game["0"][userid]=auid
+    else:
+        game["users"]=",".join([x for x in game["users"].split(",") if x != auid])
+                
+    client.DATABASE['games'].replace_one({"gameurl":game["gameurl"]},game)
+    return await outputnotifications(auid)
+    
+@client.slash_command(name="config",description="Change settings for a game")
+async def config(ctx):
+    async def contin(interaction:disnake.MessageInteraction):
+        async def finish(interaction:disnake.MessageInteraction):
+            if interaction.author.id == ctx.author.id:
+                await interaction.response.defer()
+                a = await interaction.original_message()
+                select= disnake.ui.Select(placeholder=",".join(interaction.values),options=[disnake.SelectOption(label="HMM")],disabled=True)
+                view=disnake.ui.View()
+                view.add_item(select)
+                await interaction.followup.edit_message(message_id=a.id,view=view)
+                answer = 0
+                values = interaction.values
+                embed = await changesettings(values,selection[0],str(ctx.author.id),ctx)
+                await interaction.followup.send("Your settings have been updated",embed=embed)
+                games[gameurl][User][ctx.author.id] == answer
+                
+            else:
+                await interaction.response.defer()
+                await ctx.followup.send("You are not the original author")
+
+        await interaction.response.defer()
+        if interaction.author.id == ctx.author.id:
+            a = await interaction.original_message()
+            select= disnake.ui.Select(placeholder=interaction.values[0],options=[disnake.SelectOption(label="HMM")],disabled=True)
+            view=disnake.ui.View()
+            view.add_item(select)
+            await interaction.followup.edit_message(message_id=a.id,view=view)
+            selection = interaction.values
+            noptions = [
+                    "Notify when game is waiting on you (default)",
+                    "Notify after every change of window",
+                    "Notify when Trade is played",
+                    "Notify when a Strategy Card is played",
+                    "Notify when game log updates",
+                    "Remove notification"
+            ]
+            noptions = [disnake.SelectOption(label=x[1],value=x[0]) for x in enumerate(noptions)]
+            select = disnake.ui.Select(placeholder="Pick a setting: ",options=noptions,min_values=1,max_values=len(noptions)-1)
+            select.callback=finish
+            view = disnake.ui.View(timeout=300)
+            view.add_item(select)
+        else:
+            await ctx.followup.send("You are not the original author.")
+        await ctx.followup.send("Select all settings that apply (scroll down)",view=view)
+        
+    await ctx.response.defer(ephemeral=False)
+    start = time.time()
+    games = client.DATABASE["games"].find()
+    options=[]
+    for game in games:
+        if str(ctx.author.id) in game["users"].split(","):
+            options.append(disnake.SelectOption(label=game["gamename"],description=game["gameurl"],value=game["gameurl"]))
+    select = disnake.ui.Select(placeholder="Pick a notification...",min_values=1,max_values=1,options=options)
+    select.callback=contin
+    view = disnake.ui.View(timeout=300)
+    view.add_item(select)
+    first_message = await ctx.followup.send("Please pick a notification",view=view)
+@config.error
+async def config_error(ctx,error):
+    print(error)
+    await ctx.channel.send("<@560022746973601792> something has gone wrong with {ctx.author.user}'s config command.")
+    await ctx.channel.send(error)
+
+async def setnotification(user,gameurl,log,gamesummary,players,auid):
+    game = client.DATABASE["games"].find_one({"gameurl":gameurl})
+    f = True
+    gamename = gamesummary["name"]
+    if game == None:
+        if gamesummary["abilityRound"]["inProgress"]:
+            waitingplayer = players[gamesummary["abilityRound"]["current"]-1]["user"]["_id"].strip()
+        else:
+            waitingplayer = players[gamesummary["turn"]["player"]["current"]-1]["user"]["_id"].strip()
+        lst = str(gamesummary["step"])+str(waitingplayer)
+        client.DATABASE["games"].insert_one({"gameurl":gameurl,"lastStep":lst,"lastLog":log[0]["_id"],"0":{user:auid},"users":auid,"gamename":gamename,"justChanged":lst})
+    else:
+        if user in game["0"]:
+            if auid not in game["0"][user].split(","):
+                updatedids=",".join(game["0"][user].split(",")+[auid])
+            else:
+                updatedids=game["0"][user]
+            updatedusers=game["users"]
+            if auid not in updatedusers.split(",") and updatedusers!="":
+                updatedusers = updatedusers+","+auid
+            elif auid not in updatedusers.split(","):
+                updatedusers=auid
+            client.DATABASE["games"].update_one({"gameurl":gameurl},[{"$set":{"0":{user:updatedids},"users":updatedusers}}])
+        else:
+            client.DATABASE["games"].update_one({"gameurl":gameurl},[{"$set":{"0":{user:auid}}}])
+    return gamename
+
+@client.slash_command(name="notify",description="Receive notifications for a public game", options=[disnake.Option("gameurl",description="Please paste the url of the game",required=True)])
+async def notify(ctx,gameurl):
+    async def finish(interaction:disnake.MessageInteraction):
+        if interaction.author.id == ctx.author.id:
+            await interaction.response.defer()
+            a = await interaction.original_message()
+            user = interaction.values[0]
+            username = [x for x in playeroptions1 if x[1] == user][0][0]
+            select=disnake.ui.Select(options=[disnake.SelectOption(label="A")],disabled=True,placeholder=username)
+            view= disnake.ui.View()
+            view.add_item(select)
+            await interaction.followup.edit_message(message_id=a.id,view=view)
+            gamename = await setnotification(user,gameurl,log,gamesummary,players,str(interaction.author.id))
+            await ctx.followup.send(f"A reminder has been placed in {gamename} for {username}")
+
+        else:
+            await interaction.response.send_message(f"You are not the original author")
+    await ctx.response.defer(ephemeral=False)
+    try:
+        async with client.session.get(gameurl+"/players") as players:
+            log,gamesummary,players = [json.loads(x) for x in await asyncio.gather(fetch(client.session,gameurl+"/log"),fetch(client.session,gameurl+"/summary"),fetch(client.session,gameurl+"/players"))]
+            playeroptions1 = [(x["user"]["username"].strip(" "),x["user"]["_id"]) for x in players]
+            if players == []:
+                raise()
+    except:
+        try:
+            async with client.session.get("https://www.twilightwars.com/games/"+gameurl+"/players") as players:
+                log,gamesummary,players = [json.loads(x) for x in await asyncio.gather(fetch(client.session,gameurl+"/log"),fetch(client.session,gameurl+"/summary"),fetch(client.session,gameurl+"/players"))]
+                playeroptions1 = [(x["user"]["username"].strip(" "),x["user"]["_id"]) for x in players]
+                if players == []:
+                    raise()
+        except:
+            await ctx.followup.send(f"Could not find: {gameurl}")
+            return
+        gameurl = "https://www.twilightwars.com/games/"+gameurl
+    playeroptions = [disnake.SelectOption(label=x[0],value=x[1]) for x in playeroptions1]
+    select = disnake.ui.Select(options=playeroptions, placeholder="Choose your TW Account name...",min_values=1,max_values=1)
+    select.callback = finish
+    view = disnake.ui.View(timeout=300)
+    view.add_item(select)
+    await ctx.followup.send("Please pick your Twilight Wars username: ", view=view)
+@notify.error
+async def notify_error(ctx,error):
+    print(error)
+    await ctx.channel.send("<@560022746973601792> something has gone wrong with {ctx.author.user}'s notify command.")
+    await ctx.channel.send(error)
+
+
+@client.slash_command(name="update",description="Trigger the automatic update immediately")
+async def updatecommand(ctx):
+    await ctx.response.defer()
+    if update.is_running():
+        update.restart()
+    else:
+        update.start()
+    await ctx.followup.send("Updating...")
+@updatecommand.error
+async def updatecommand_error(ctx,error):
+    print(error)
+    await ctx.channel.send("<@560022746973601792> something has gone wrong with {ctx.author.user}'s update command.")
+    await ctx.channel.send(error)
+
+
+@client.slash_command(name="help",description = "How to use this bot")
+async def help(ctx):
+    async def callback(interaction:disnake.MessageInteraction):
+        await interaction.response.defer()
+        a = await interaction.original_message()
+        select = disnake.ui.Select(placeholder=["Get Started","Advanced Commands","Notification Settings"][int(interaction.values[0])],options=[disnake.SelectOption(label="Get Started",value=0),disnake.SelectOption(label="Advanced Commands",value=1),disnake.SelectOption(label="Notification Settings",value=2)],min_values=1,max_values=1)
+        select.callback=callback
+        view= disnake.ui.View()
+        view.add_item(select)
+        await interaction.followup.edit_message(message_id=a.id,view=view,embed=embeds[int(interaction.values[0])])
+            
+    embeds = [disnake.Embed(title="Help",description = """This bot has been designed to mimic the notification system of the Twilight Wars web app for people who are unable to get notifications. Please message Al Vergis if you require any assistance""",colour=disnake.Colour.blue()) for x in range(3)]
+    embeds[0].add_field(name="Get Started", value = "To get started type '/notify ' then paste the URL of the game that you want to be monitored. A select menu will appear which will ask you to pick your TW Username. After you have chosen your username, the bot will confirm that the notification has been saved.",inline=False)
+    embeds[0].add_field(name="Quick Notify", value="To add multiple notifications, use '/quicknotify' followed by the URL of a game. If you click the end of the message it will give you the option to add another field to the command, which you can paste the next URL into. You can add between 1 and 25 games using the method.")
+    embeds[1].add_field(name="Advanced Commands",value="""There are currently 7 commands:
+                          /notify [gameurl]: adds a new notification
+                          /quicknotify [gameurls]: allows for multiple games to be added at the same time
+                          /config: changes the setting of a notification
+                          /viewnotifications: shows current notification settings
+                          /update: triggers the automatic update immediately
+                          /setdefault [gameurl]: changes your default settings
+                          /removeall {confirmation]: removes all notifications""",inline=False)
+    embeds[2].add_field(name="Notification Settings",value="""There are 5 settings that can be used with the config command:
+                    Notify when game is waiting on you (default)
+                    Notify after every change of window
+                    Notify when Trade is played
+                    Notify when a Strategy Card is played
+                    Notify when game log updates""",inline=False)
+    select = disnake.ui.Select(options=[disnake.SelectOption(label="Get Started",value=0),disnake.SelectOption(label="Advanced commands",value=1),disnake.SelectOption(label="Notification Settings",value=2)],min_values=1,max_values=1)
+    select.callback=callback
+    view = disnake.ui.View()
+    view.add_item(select)
+    await ctx.response.send_message("",embed=embeds[0],view=view)
+@help.error
+async def help_error(ctx,error):
+    print(error)
+    await ctx.channel.send("<@560022746973601792> something has gone wrong with {ctx.author.user}'s help command.")
+    await ctx.channel.send(error)
+
+@tasks.loop(minutes=2)
+async def update():
+    start=time.time()
+    colours = {"magenta":disnake.Colour.magenta(),"black":0,"purple": disnake.Colour.purple(),"red":disnake.Colour.red(),"yellow":disnake.Colour.yellow(), "green":disnake.Colour.green(),"blue":disnake.Colour.blue(),"orange":disnake.Colour.orange()}
+    games = client.DATABASE['games'].find()
+    await asyncio.sleep(0)
+    print()
+    print("Initiating update number: "+str(update.current_loop+1))
+    gamestoberemoved = []
+    payload = {
+        'email':os.environ["EMAIL"],
+        'password':os.environ["PASSWORD"]
+    }
+    users= set()
+    async def getgames(game):
+        for user in game["users"].split(","):
+            users.add(user)
+        gamename = game["gamename"]
+        gameurl=game["gameurl"]
+        if "justChanged" not in game.keys():
+            game["justChanged"]=""
+        log,gamesummary,players = [json.loads(x) for x in await asyncio.gather(fetch(client.session,gameurl+"/log"),fetch(client.session,gameurl+"/summary"),fetch(client.session,gameurl+"/players"))]
+        if game["users"]=="":
+            client.DATABASE["games"].delete_one({"gameurl":game["gameurl"]})
+        elif log[0]["event"] == "game over":
+            peopleinvolved = []
+            peopleinvolved = game["users"].split(",")
+            await client.channel.send(f"<@"+'> <@'.join(peopleinvolved)+">\n"+gamename+" has ended, so your notifications have been automatically removed")
+            client.DATABASE["games"].delete_one({"gameurl":gameurl})
+        for i in range(1,5):
+            if str(i) in game.keys():
+                if game[str(i)]=="":
+                    client.DATABASE["games"].update_one({"gameurl":gameurl},{"$unset":{str(i):""}}),
+        if gamesummary["abilityRound"]["inProgress"]:
+            waitingplayer = players[gamesummary["abilityRound"]["current"]-1]["user"]["_id"].strip()
+            waitingplayername = players[gamesummary["abilityRound"]["current"]-1]["user"]["username"].strip()
+            waitingno = gamesummary["abilityRound"]["current"]-1
+            abilitytext = " respond to"
+        else:
+            waitingplayer = players[gamesummary["turn"]["player"]["current"]-1]["user"]["_id"].strip()
+            waitingplayername = players[gamesummary["turn"]["player"]["current"]-1]["user"]["username"].strip()
+            waitingno = gamesummary["turn"]["player"]["current"]-1
+            abilitytext = ""
+        if "0" in game.keys():
+            if waitingplayer in game["0"].keys():
+                waitingaction = gamesummary["step"]
+                gameround = gamesummary["round"]
+                gamephase = gamesummary["phase"]
+                gamename = gamesummary["name"]
+                colour = (players[waitingno]["color"])                
+                colour = colours[colour]
+                embed=disnake.Embed(title=gamename,url = gameurl, description = str(f"Waiting for {waitingplayername} to{abilitytext}: {waitingaction}\nRound: {gameround}"),color=colour)
+                embed.set_author(name="Twilight Imperium Reminder",url=gameurl,icon_url = f"https://www.twilightwars.com/img/faction/{players[waitingno]['faction'].replace(' ','%20')}/symbol.png")
+                if game["lastStep"] == str(gamesummary["step"])+str(waitingplayer) and str(gamesummary["step"])+str(waitingplayer)!= game["justChanged"]:
+                    if game["0"][waitingplayer]!="":
+                        await client.channel.send(f"The game is waiting for {waitingplayername} <@{'> <@'.join(game['0'][waitingplayer].split(','))}>",embed=embed)
+                        print(f"{waitingplayername} was notified")
+                    else:
+                        print(waitingplayername+" didn't receive a notification.")
+                    if "1" in game.keys():
+                        if game["1"]!="":
+                            await client.channel.send(f"<@{'> <@'.join(game['1'].split(','))}> The game is waiting on {waitingplayername}",embed=embed)
+                        
+                elif game["lastStep"]==str(gamesummary["step"])+str(waitingplayer):
+                    print(f"{waitingplayername} has already been notified")
+                else:
+                    print(f"{waitingplayername} will receive a notification next cycle")
+                client.DATABASE["games"].update_one({"gameurl":gameurl},{"$set":{"lastStep":str(gamesummary["step"])+str(waitingplayer),"justChanged":game["lastStep"]}})
+
+            else:
+                waitingaction = gamesummary["step"]
+                gameround = gamesummary["round"]
+                gamephase = gamesummary["phase"]
+                gamename = gamesummary["name"]
+                colour = (players[waitingno]["color"])             
+                colour = colours[colour]
+
+                embed=disnake.Embed(title=gamename,url = gameurl, description = str(f"Waiting for {waitingplayername} to{abilitytext}: {waitingaction}\nRound: {gameround}"),color=colour)
+                embed.set_author(name="Twilight Imperium Reminder",url=gameurl,icon_url = f"https://www.twilightwars.com/img/faction/{players[waitingno]['faction'].replace(' ','%20')}/symbol.png")
+
+                if "1" in game.keys():
+                    if game["1"]!="":
+                        await client.channel.send(f"<@{'> <@'.join(game['1'].split(','))}> The game is waiting on {waitingplayername}",embed=embed)
+                print(waitingplayername + " didn't receive a notification.")
+        else:
+            print("Something has gone horribly wrong")
+        count = 0
+        events = []
+        lastLog = log[count]["_id"]
+        #FIX
+        if log[count]["_id"] != game["lastLog"]:
+            while log[count]["_id"] != game["lastLog"]:
+                if 'user' in log[count].keys():
+                    for player in players:
+                        if player['user']["_id"] == log[count]['user']:
+                            if log[count]['event'] == "strategy card played":
+                                if '2' in game.keys():
+                                    if game["2"] != "":
+                                        if log[count]['details']['strategyCard'] == "Trade":
+                                            await client.channel.send(f"<@{'> <@'.join(game['2'].split(','))}>\nTrade Strategy Card played in {gamename}")
+                                if '3' in game.keys():
+                                    if game["3"] != "":
+                                        await client.channel.send(f"<@{'> <@'.join(game['3'].split(','))}>\nStrategy Card played in {gamename}")
+                            events.append(f"{player['user']['username']}: {log[count]['event'].title()}.")
+                else:
+                    events.append(f"{log[count]['event'].title()}")
+                count += 1
+                if count >= len(log):
+                    break
+            client.DATABASE['games'].update_one({"gameurl":gameurl},{"$set":{"lastLog":lastLog}})
+        if '4' in game.keys():
+            if game["4"] != "":
+                for i in reversed(events):                   
+                    await client.channel.send(f"<@{'> <@'.join(game['4'].split(','))}>\n{i.title()[:-1]} in {gamename}")
+    await asyncio.gather(*[getgames(x) for x in games])
+    print("Update concluded")
+    print("Current users: "+", ".join([str((await client.fetch_user(int(x))).name) for x in users]))
+    print("Number of users: "+str(len(users)))
+    end=time.time()
+    print("Time taken: "+str(end-start))
+    await client.session.close()
+    payload = {
+                'email':os.environ["EMAIL"],
+                'password':os.environ["PASSWORD"]
+            }
+    client.session = aiohttp.ClientSession()
+    await client.session.post("https://www.twilightwars.com/login",data=payload)
+@client.event
+async def on_ready():
+    for guild in client.guilds:
+        if guild.name == GUILD:
+            break
+    client.channel = await client.fetch_channel(970285338901745695)
+    #await client.channel.send("I'm alive")
+    #await asyncio.sleep(30)
+    client.loop=asyncio.get_event_loop()
+    payload = {
+                'email':os.environ["EMAIL"],
+                'password':os.environ["PASSWORD"]
+            }
+    client.session = aiohttp.ClientSession()
+    async with client.session.post("https://www.twilightwars.com/login",data=payload) as response:
+        if not update.is_running():
+            update.start()
+
+#wh
+@client.event
+async def on_error(ctx):
+    print(sys.exc_info())
+    print(client.user)
+    await client.channel.send("<@560022746973601792> something has gone wrong.")
+    await client.channel.send(sys.exc_info())
+client.run(os.environ["DISCORD_TOKEN"])
