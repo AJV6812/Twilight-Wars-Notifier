@@ -468,7 +468,7 @@ async def update():
         'password':os.environ["PASSWORD"]
     } #This is for login later
     users = set()
-    async def getgames(game):
+    async def getgames(game): #This runs
         for user in game["users"].split(","):
             users.add(user)
         gamename = game["gamename"]
@@ -476,7 +476,14 @@ async def update():
         print(gameurl)
         if "justChanged" not in game.keys():
             game["justChanged"]=""
-        log,gamesummary,players = [json.loads(x) for x in await asyncio.gather(fetch(client.session,gameurl+"/log"),fetch(client.session,gameurl+"/summary"),fetch(client.session,gameurl+"/players"))]
+        try:
+            log,gamesummary,players = [json.loads(x) for x in await asyncio.gather(fetch(client.session,gameurl+"/log"),fetch(client.session,gameurl+"/summary"),fetch(client.session,gameurl+"/players"))]
+        except json.decoder.JSONDecodeError:
+            peopleinvolved = []
+            peopleinvolved = game["users"].split(",")
+            await client.channel.send(f"<@"+'> <@'.join(peopleinvolved)+">\n"+gamename+" has mysteriously disappeared, so your notifications have been automatically removed")
+            client.DATABASE["games"].delete_one({"gameurl":gameurl})
+            return
         if game["users"]=="":
             client.DATABASE["games"].delete_one({"gameurl":game["gameurl"]})
         elif log[0]["event"] == "game over":
@@ -544,7 +551,6 @@ async def update():
         count = 0
         events = []
         lastLog = log[count]["_id"]
-        #FIX
         if log[count]["_id"] != game["lastLog"]:
             while log[count]["_id"] != game["lastLog"]:
                 if 'user' in log[count].keys():
@@ -569,7 +575,7 @@ async def update():
             if game["4"] != "":
                 for i in reversed(events):                   
                     await client.channel.send(f"<@{'> <@'.join(game['4'].split(','))}>\n{i.title()[:-1]} in {gamename}")
-    await asyncio.gather(*[getgames(x) for x in games])
+    await asyncio.gather(*[getgames(x) for x in games]) #Does all the games asynchronously
     print("Update concluded")
     print("Current users: "+", ".join([str((await client.fetch_user(int(x))).name) for x in users]))
     print("Number of users: "+str(len(users)))
