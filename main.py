@@ -24,6 +24,7 @@ async def view(ctx):
     await ctx.response.defer()
     embed = await outputnotifications(str(ctx.author.id))
     await ctx.followup.send("Notifications: ",embed=embed)
+    
 @view.error
 async def view_error(ctx,error):
     print(error)
