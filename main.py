@@ -143,15 +143,12 @@ async def quicknotify(ctx, gameurl1,gameurl2=None,gameurl3=None,gameurl4=None,ga
         await asyncio.sleep(1)
         timeout-=1
     async def onegame(gameurl):
-        print(gameurl)
         try:
             log,gamesummary,players = [json.loads(x) for x in await asyncio.gather(fetch(client.session,gameurl+"/log"),fetch(client.session,gameurl+"/summary"),fetch(client.session,gameurl+"/players"))]
         except:
             await ctx.followup.send("Could not find "+gameurl)
             return
         playerids = [x["user"]["_id"] for x in players]
-        print(playerids)
-        print(default in playerids)
         if default["TWUser"] not in playerids:
             if default["TWUser"]=="":
                 default["TWUser"]=None
@@ -160,8 +157,6 @@ async def quicknotify(ctx, gameurl1,gameurl2=None,gameurl3=None,gameurl4=None,ga
                 return
         await changesettings(default["settings"].split(","),gameurl,str(ctx.author.id),ctx,default["TWUser"])
         await setnotification(default["TWUser"],gameurl,log,gamesummary,players,str(ctx.author.id))
-    print("Hello")
-    print(gameurls)
     await asyncio.gather(*[onegame(x) for x in gameurls])
     embed = await outputnotifications(str(ctx.author.id))
     await ctx.followup.send("These are your current notifications:",embed=embed)
@@ -519,17 +514,17 @@ async def update():
                 if game["lastStep"] == str(gamesummary["step"])+str(waitingplayer) and str(gamesummary["step"])+str(waitingplayer)!= game["justChanged"]: #This makes sure that the notification is only sent if it hasn't been sent yet and it has been at least 2 minutes since it changed
                     if game["0"][waitingplayer]!="":
                         await client.channel.send(f"The game is waiting for {waitingplayername} <@{'> <@'.join(game['0'][waitingplayer].split(','))}>",embed=embed)
-                        print(f"{waitingplayername} was notified")
+                        #print(f"{waitingplayername} was notified")
                     else:
-                        print(waitingplayername+" didn't receive a notification.")
+                        #print(waitingplayername+" didn't receive a notification.")
                     if "1" in game.keys():
                         if game["1"]!="":
                             await client.channel.send(f"<@{'> <@'.join(game['1'].split(','))}> The game is waiting on {waitingplayername}",embed=embed)
                         
                 elif game["lastStep"]==str(gamesummary["step"])+str(waitingplayer):
-                    print(f"{waitingplayername} has already been notified")
+                    #print(f"{waitingplayername} has already been notified")
                 else:
-                    print(f"{waitingplayername} will receive a notification next cycle")
+                    #print(f"{waitingplayername} will receive a notification next cycle")
                 #Updates the dictionary so that notifications are not sent twice
                 client.DATABASE["games"].update_one({"gameurl":gameurl},{"$set":{"lastStep":str(gamesummary["step"])+str(waitingplayer),"justChanged":game["lastStep"]}})
 
@@ -547,7 +542,7 @@ async def update():
                 if "1" in game.keys():
                     if game["1"]!="":
                         await client.channel.send(f"<@{'> <@'.join(game['1'].split(','))}> The game is waiting on {waitingplayername}",embed=embed)
-                print(waitingplayername + " didn't receive a notification.")
+                #print(waitingplayername + " didn't receive a notification.")
         else:
             print("Something has gone horribly wrong")
         count = 0
