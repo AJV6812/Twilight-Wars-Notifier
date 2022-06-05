@@ -129,7 +129,7 @@ async def removeall_error(ctx,error):
     await ctx.channel.send(error)
 
 #Ignore quicknotify, nobody uses it anyway so you can just pretend it doesn't exist.
-@client.slash_command(name="quicknotify",description="Use default settings to add notifications",options=[disnake.Option(name="gameurl1",description="Please paste a game url",required=True)]+[disnake.Option(name="gameurl"+str(x),description="You may enter more urls",required=False) for x in range(2,26)])
+@client.slash_command(name="quicknotify",description="Use default settings to add notificati#ons",options=[disnake.Option(name="gameurl1",description="Please paste a game url",required=True)]+[disnake.Option(name="gameurl"+str(x),description="You may enter more urls",required=False) for x in range(2,26)])
 async def quicknotify(ctx, gameurl1,gameurl2=None,gameurl3=None,gameurl4=None,gameurl5=None,gameurl6=None,gameurl7=None,gameurl8=None,gameurl9=None,gameurl10=None,gameurl11=None,gameurl12=None,gameurl13=None,gameurl14=None,gameurl15=None,gameurl16=None,gameurl17=None,gameurl18=None,gameurl19=None,gameurl20=None,gameurl21=None,gameurl22=None,gameurl23=None,gameurl24=None,gameurl25=None):
     await ctx.response.defer()    
     gameurls=[gameurl1,gameurl2,gameurl3,gameurl4,gameurl5,gameurl6,gameurl7,gameurl8,gameurl9,gameurl10,gameurl11,gameurl12,gameurl13,gameurl14,gameurl15,gameurl16,gameurl17,gameurl18,gameurl19,gameurl20,gameurl21,gameurl22,gameurl23,gameurl24,gameurl25]
@@ -515,15 +515,15 @@ async def update():
                     if game["0"][waitingplayer]!="":
                         await client.channel.send(f"The game is waiting for {waitingplayername} <@{'> <@'.join(game['0'][waitingplayer].split(','))}>",embed=embed)
                         #print(f"{waitingplayername} was notified")
-                    else:
+                    #else:
                         #print(waitingplayername+" didn't receive a notification.")
                     if "1" in game.keys():
                         if game["1"]!="":
                             await client.channel.send(f"<@{'> <@'.join(game['1'].split(','))}> The game is waiting on {waitingplayername}",embed=embed)
                         
-                elif game["lastStep"]==str(gamesummary["step"])+str(waitingplayer):
+                #elif game["lastStep"]==str(gamesummary["step"])+str(waitingplayer):
                     #print(f"{waitingplayername} has already been notified")
-                else:
+                #else:
                     #print(f"{waitingplayername} will receive a notification next cycle")
                 #Updates the dictionary so that notifications are not sent twice
                 client.DATABASE["games"].update_one({"gameurl":gameurl},{"$set":{"lastStep":str(gamesummary["step"])+str(waitingplayer),"justChanged":game["lastStep"]}})
