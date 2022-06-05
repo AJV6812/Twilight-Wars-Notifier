@@ -28,7 +28,7 @@ async def view(ctx):
 @view.error
 async def view_error(ctx,error):
     print(error)
-    await ctx.channel.send("<@560022746973601792> something has gone wrong with {ctx.author.user}'s view command.")
+    await ctx.channel.send(f"<@560022746973601792> something has gone wrong with {ctx.author.user}'s view command.")
     await ctx.channel.send(error)
 async def changedefault(ctx,gameurl):
     defaultdic = {"auid":str(ctx.author.id),
@@ -125,7 +125,7 @@ async def removeall(ctx,confirmation):
 @removeall.error
 async def removeall_error(ctx,error):
     print(error)
-    await ctx.channel.send("<@560022746973601792> something has gone wrong with {ctx.author.user}'s removeall command.")
+    await ctx.channel.send(f"<@560022746973601792> something has gone wrong with {ctx.author.user}'s removeall command.")
     await ctx.channel.send(error)
 
 #Ignore quicknotify, nobody uses it anyway so you can just pretend it doesn't exist.
@@ -163,7 +163,7 @@ async def quicknotify(ctx, gameurl1,gameurl2=None,gameurl3=None,gameurl4=None,ga
 @quicknotify.error
 async def quicknotify_error(ctx,error):
     print(error)
-    await ctx.channel.send("<@560022746973601792> something has gone wrong with {ctx.author.user}'s quicknotify command.")
+    await ctx.channel.send(f"<@560022746973601792> something has gone wrong with {ctx.author.user}'s quicknotify command.")
     await ctx.channel.send(error)
 
 #Despite the title, all this does is create an embed with a users notifications on it. It is likely not what you are looking for.
@@ -193,7 +193,7 @@ async def setdefault(ctx,gameurl):
 @setdefault.error
 async def setdefault_error(ctx,error):
     print(error)
-    await ctx.channel.send("<@560022746973601792> something has gone wrong with {ctx.author.user}'s setdefault command.")
+    await ctx.channel.send(f"<@560022746973601792> something has gone wrong with {ctx.author.user}'s setdefault command.")
     await ctx.channel.send(error)
 
 async def changesettings(values,gameurl,auid,ctx,user=None):
@@ -318,7 +318,7 @@ async def config(ctx):
 @config.error
 async def config_error(ctx,error):
     print(error)
-    await ctx.channel.send("<@560022746973601792> something has gone wrong with {ctx.author.user}'s config command.")
+    await ctx.channel.send(f"<@560022746973601792> something has gone wrong with {ctx.author.user}'s config command.")
     await ctx.channel.send(error)
 
 async def setnotification(user,gameurl,log,gamesummary,players,auid):
@@ -395,7 +395,7 @@ async def notify(ctx,gameurl):
 @notify.error
 async def notify_error(ctx,error):
     print(error)
-    await ctx.channel.send("<@560022746973601792> something has gone wrong with {ctx.author.user}'s notify command.")
+    await ctx.channel.send(f"<@560022746973601792> something has gone wrong with {ctx.author.user}'s notify command.")
     await ctx.channel.send(error)
 
 #Does what it says. Not complicated
@@ -446,7 +446,7 @@ async def help(ctx):
 @help.error
 async def help_error(ctx,error):
     print(error)
-    await ctx.channel.send("<@560022746973601792> something has gone wrong with {ctx.author.user}'s help command.")
+    await ctx.channel.send(f"<@560022746973601792> something has gone wrong with {ctx.author.user}'s help command.")
     await ctx.channel.send(error)
 
 
