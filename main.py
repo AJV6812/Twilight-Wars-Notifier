@@ -373,19 +373,16 @@ async def notify(ctx,gameurl):
                 raise()
     except:
         try:
-            print("Hello")
             async with client.session.get("https://www.twilightwars.com/games/"+gameurl+"/players") as players:
-                print("Bello")
+                gameurl = "https://www.twilightwars.com/games/"+gameurl
                 log,gamesummary,players = [json.loads(x) for x in await asyncio.gather(fetch(client.session,gameurl+"/log"),fetch(client.session,gameurl+"/summary"),fetch(client.session,gameurl+"/players"))]
-                print("Yellow")
                 playeroptions1 = [(x["user"]["username"].strip(" "),x["user"]["_id"]) for x in players]
-                print("Tello")
                 if players == []:
                     raise()
         except:
             await ctx.followup.send(f"Could not find: {gameurl}")
             return
-        gameurl = "https://www.twilightwars.com/games/"+gameurl
+        
     playeroptions = [disnake.SelectOption(label=x[0],value=x[1]) for x in playeroptions1]
     select = disnake.ui.Select(options=playeroptions, placeholder="Choose your TW Account name...",min_values=1,max_values=1)
     select.callback = finish
