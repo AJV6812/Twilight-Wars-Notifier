@@ -580,8 +580,8 @@ async def update():
                     await client.channel.send(f"<@{'> <@'.join(game['4'].split(','))}>\n{i.title()[:-1]} in {gamename}")
     await asyncio.gather(*[getgames(x) for x in games]) #Does all the games asynchronously
     print("Update concluded")
-    print("Current users: "+", ".join([str((await client.fetch_user(int(x))).name) for x in users]))
-    print("Number of users: "+str(len(users)))
+    #print("Current users: "+", ".join([str((await client.fetch_user(int(x))).name) for x in users]))
+    #print("Number of users: "+str(len(users)))
     end=time.time()
     print("Time taken: "+str(end-start))
     await client.session.close()
