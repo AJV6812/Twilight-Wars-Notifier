@@ -366,16 +366,20 @@ async def notify(ctx,gameurl):
             await interaction.response.send_message(f"You are not the original author")
     await ctx.response.defer(ephemeral=False)
     try: #Uses aiohttp to get the information about the game (it does this twice just in case someone only sent the Game ID rather than the URL
-        async with client.session.get(gameurl+"/players") as players: 
+        async with client.session.get(gameurl+"/players") as players:
             log,gamesummary,players = [json.loads(x) for x in await asyncio.gather(fetch(client.session,gameurl+"/log"),fetch(client.session,gameurl+"/summary"),fetch(client.session,gameurl+"/players"))]
             playeroptions1 = [(x["user"]["username"].strip(" "),x["user"]["_id"]) for x in players]
             if players == []: #Just in case either private games get patched or someone sends a valid URL that leads to no game (it is possible)
                 raise()
     except:
         try:
+            print("Hello")
             async with client.session.get("https://www.twilightwars.com/games/"+gameurl+"/players") as players:
+                print("Bello")
                 log,gamesummary,players = [json.loads(x) for x in await asyncio.gather(fetch(client.session,gameurl+"/log"),fetch(client.session,gameurl+"/summary"),fetch(client.session,gameurl+"/players"))]
+                print("Yellow")
                 playeroptions1 = [(x["user"]["username"].strip(" "),x["user"]["_id"]) for x in players]
+                print("Tello")
                 if players == []:
                     raise()
         except:
