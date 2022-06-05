@@ -66,7 +66,7 @@ async def changedefault(ctx,gameurl):
                     except:
                         await interaction.followup.send(gameurl+" could not be found")
                         return
-            options = [disnake.SelectOption(label=x["user"]["username"].strip(" "),value=x["user"]["_id"]) for x in json.loads(await players.text())]
+                    options = [disnake.SelectOption(label=x["user"]["username"].strip(" "),value=x["user"]["_id"]) for x in json.loads(await players.text())]
             select=disnake.ui.Select(options=options,min_values=1,max_values=1)
             select.callback=usercallback
             view = disnake.ui.View()
