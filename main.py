@@ -66,7 +66,7 @@ async def changedefault(ctx,gameurl):
                     except:
                         await interaction.followup.send(gameurl+" could not be found")
                         return
-                    options = [disnake.SelectOption(label=x["user"]["username"].strip(" "),value=x["user"]["_id"]) for x in json.loads(await players.text())]
+            options = [disnake.SelectOption(label=x["user"]["username"].strip(" "),value=x["user"]["_id"]) for x in json.loads(await players.text())]
             select=disnake.ui.Select(options=options,min_values=1,max_values=1)
             select.callback=usercallback
             view = disnake.ui.View()
@@ -403,11 +403,7 @@ async def updatecommand(ctx):
     else:
         update.start()
     await ctx.followup.send("Updating...")
-@updatecommand.error
-async def updatecommand_error(ctx,error):
-    print(error)
-    await ctx.channel.send("<@560022746973601792> something has gone wrong with {ctx.author.user}'s update command.")
-    await ctx.channel.send(error)
+
 
 
 @client.slash_command(name="help",description = "How to use this bot")
