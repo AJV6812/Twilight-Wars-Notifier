@@ -37,7 +37,7 @@ async def changedefault(ctx,gameurl):
      "TWUsername":""}
     async def finish(interaction:disnake.MessageInteraction):
         if interaction.author.id == ctx.author.id:
-            #This locks the select box so you can't use it twice, while updating the default dictionary with your settings
+            #This locks the select box so you can't use it twice, while updating thpe default dictionary with your settings
             await interaction.response.defer()
             a = await interaction.original_message()
             select= disnake.ui.Select(placeholder=",".join(interaction.values),options=[disnake.SelectOption(label="HMM")],disabled=True)
@@ -571,11 +571,11 @@ async def update():
                 for i in reversed(events):                   
                     await client.channel.send(f"<@{'> <@'.join(game['4'].split(','))}>\n{i.title()[:-1]} in {gamename}")
     await asyncio.gather(*[getgames(x) for x in games]) #Does all the games asynchronously
-    print("Update concluded")
+    #print("Update concluded")
     #print("Current users: "+", ".join([str((await client.fetch_user(int(x))).name) for x in users]))
     #print("Number of users: "+str(len(users)))
     end=time.time()
-    print("Time taken: "+str(end-start))
+    #print("Time taken: "+str(end-start))
     await client.session.close()
     payload = {
                 'email':os.environ["EMAIL"],
