@@ -112,7 +112,7 @@ async def changedefault(ctx,gameurl):
 async def removeall(ctx,confirmation):
     #Simply loops through every stored game and removes ctx.author.id
     await ctx.response.defer()
-    if "y" == confirmation.lower():
+    if "y" == confirmation.lower(): 
         games=client.DATABASE["games"].find()
         for ngame in games:
             value=[]
@@ -608,4 +608,7 @@ async def on_error(ctx):
     print(client.user)
     await client.channel.send("<@560022746973601792> something has gone wrong.")
     await client.channel.send(sys.exc_info())
-client.run(os.environ["DISCORD_TOKEN"])
+try:
+    client.run(os.environ["DISCORD_TOKEN"])
+except disnake.errors.HTTPException as e:
+    print(e.response)
