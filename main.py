@@ -478,7 +478,7 @@ async def update():
             peopleinvolved = game["users"].split(",")
             await client.channel.send(f"<@"+'> <@'.join(peopleinvolved)+">\n"+gamename+" has mysteriously disappeared, so your notifications have been automatically removed")
             print(gameurl)
-            
+            print(game)
             client.DATABASE["games"].delete_one({"gameurl":gameurl})
             return
         if game["users"]=="":
