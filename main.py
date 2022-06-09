@@ -349,6 +349,7 @@ async def setnotification(user,gameurl,log,gamesummary,players,auid):
     return gamename #Some commands need the gamename returned for output
 @client.slash_command(name="notify",description="Receive notifications for a public game", options=[disnake.Option("gameurl",description="Please paste the url of the game",required=True)])
 async def notify(ctx,gameurl):
+    await ctx.response.defer(ephemeral=False)
     async def finish(interaction:disnake.MessageInteraction): #Just setting up the responses to the select menus (this can probably be done in a more efficient way)
         if interaction.author.id == ctx.author.id:
             await interaction.response.defer()
@@ -364,7 +365,6 @@ async def notify(ctx,gameurl):
 
         else:
             await interaction.response.send_message(f"You are not the original author")
-    await ctx.response.defer(ephemeral=False)
     try: #Uses aiohttp to get the information about the game (it does this twice just in case someone only sent the Game ID rather than the URL
         async with client.session.get(gameurl+"/players") as players:
             log,gamesummary,players = [json.loads(x) for x in await asyncio.gather(fetch(client.session,gameurl+"/log"),fetch(client.session,gameurl+"/summary"),fetch(client.session,gameurl+"/players"))]
@@ -392,7 +392,7 @@ async def notify(ctx,gameurl):
 @notify.error
 async def notify_error(ctx,error):
     print(error)
-    await ctx.channel.send(f"<@560022746973601792> something has gone wrong with {ctx.author.user}'s notify command.")
+    await ctx.channel.send(f"<@560022746973601792> something has gone wrong with {ctx.author.id}'s notify command.")
     await ctx.channel.send(error)
 
 #Does what it says. Not complicated
