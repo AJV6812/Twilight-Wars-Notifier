@@ -468,6 +468,7 @@ async def update():
         gameurl=game["gameurl"]
         if "justChanged" not in game.keys():
             game["justChanged"]=""
+        print(await asyncio.gather(fetch(client.session,gameurl+"/log")))
         json.loads(await asyncio.gather(fetch(client.session,gameurl+"/log")))
         json.loads(await asyncio.gather(fetch(client.session,gameurl+"/summary")))
         json.loads(await asyncio.gather(fetch(client.session,gameurl+"/players")))
@@ -476,10 +477,10 @@ async def update():
         except json.decoder.JSONDecodeError:
             peopleinvolved = []
             peopleinvolved = game["users"].split(",")
-            await client.channel.send(f"<@"+'> <@'.join(peopleinvolved)+">\n"+gamename+" has mysteriously disappeared, so your notifications have been automatically removed")
+            #await client.channel.send(f"<@"+'> <@'.join(peopleinvolved)+">\n"+gamename+" has mysteriously disappeared")
             print(gameurl)
             print(game)
-            client.DATABASE["games"].delete_one({"gameurl":gameurl})
+            #client.DATABASE["games"].delete_one({"gameurl":gameurl})
             return
         if game["users"]=="":
             client.DATABASE["games"].delete_one({"gameurl":game["gameurl"]}) #If everyone's removed their notifications from a game, then there's no point in keeping it aroun
