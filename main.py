@@ -16,7 +16,7 @@ client.DATABASE=dbclient["test"]
 #This is so I can get information from the server asynchronously
 async def fetch(session, url):
     async with session.get(url) as response:
-        return await response.text()
+        return str(await response.text())
 
 #This is the command that creates an embed with each notification on it. It basically does nothing but hand it off to another function, this is because a number of other commands have the same functionality
 @client.slash_command(name="viewnotifications",description="Provides a list of all notifications",options=[])
