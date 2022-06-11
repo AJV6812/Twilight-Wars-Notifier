@@ -25,11 +25,6 @@ async def view(ctx):
     embed = await outputnotifications(str(ctx.author.id))
     await ctx.followup.send("Notifications: ",embed=embed)
     
-@view.error
-async def view_error(ctx,error):
-    print(error)
-    await ctx.channel.send(f"<@560022746973601792> something has gone wrong with {ctx.author.user}'s view command.")
-    await ctx.channel.send(error)
 async def changedefault(ctx,gameurl):
     defaultdic = {"auid":str(ctx.author.id),
      "settings":"",
@@ -122,11 +117,6 @@ async def removeall(ctx,confirmation):
         await ctx.followup.send("Your notifications have been deleted",embed=embed)
     else:
         await ctx.followup.send("Confirmation must be 'Y' or 'y'")
-@removeall.error
-async def removeall_error(ctx,error):
-    print(error)
-    await ctx.channel.send(f"<@560022746973601792> something has gone wrong with {ctx.author.user}'s removeall command.")
-    await ctx.channel.send(error)
 
 #Ignore quicknotify, nobody uses it anyway so you can just pretend it doesn't exist.
 @client.slash_command(name="quicknotify",description="Use default settings to add notificati#ons",options=[disnake.Option(name="gameurl1",description="Please paste a game url",required=True)]+[disnake.Option(name="gameurl"+str(x),description="You may enter more urls",required=False) for x in range(2,26)])
@@ -160,11 +150,6 @@ async def quicknotify(ctx, gameurl1,gameurl2=None,gameurl3=None,gameurl4=None,ga
     await asyncio.gather(*[onegame(x) for x in gameurls])
     embed = await outputnotifications(str(ctx.author.id))
     await ctx.followup.send("These are your current notifications:",embed=embed)
-@quicknotify.error
-async def quicknotify_error(ctx,error):
-    print(error)
-    await ctx.channel.send(f"<@560022746973601792> something has gone wrong with {ctx.author.user}'s quicknotify command.")
-    await ctx.channel.send(error)
 
 #Despite the title, all this does is create an embed with a users notifications on it. It is likely not what you are looking for.
 async def outputnotifications(auid):
@@ -190,11 +175,6 @@ async def outputnotifications(auid):
 async def setdefault(ctx,gameurl):
     await ctx.response.defer()
     await changedefault(ctx,gameurl)
-@setdefault.error
-async def setdefault_error(ctx,error):
-    print(error)
-    await ctx.channel.send(f"<@560022746973601792> something has gone wrong with {ctx.author.user}'s setdefault command.")
-    await ctx.channel.send(error)
 
 async def changesettings(values,gameurl,auid,ctx,user=None):
     game=client.DATABASE["games"].find_one({"gameurl":gameurl}) #Grabs the dictionary of games for the specific one we are interested in
@@ -315,11 +295,6 @@ async def config(ctx):
     view = disnake.ui.View(timeout=300)
     view.add_item(select)
     first_message = await ctx.followup.send("Please pick a notification",view=view)
-@config.error
-async def config_error(ctx,error):
-    print(error)
-    await ctx.channel.send(f"<@560022746973601792> something has gone wrong with {ctx.author.user}'s config command.")
-    await ctx.channel.send(error)
 
 async def setnotification(user,gameurl,log,gamesummary,players,auid):
     game = client.DATABASE["games"].find_one({"gameurl":gameurl})
@@ -389,11 +364,6 @@ async def notify(ctx,gameurl):
     view = disnake.ui.View(timeout=300)
     view.add_item(select)
     await ctx.followup.send("Please pick your Twilight Wars username: ", view=view)
-@notify.error
-async def notify_error(ctx,error):
-    print(error)
-    await ctx.channel.send(f"<@560022746973601792> something has gone wrong with {ctx.author.id}'s notify command.")
-    await ctx.channel.send(error)
 
 #Does what it says. Not complicated
 @client.slash_command(name="update",description="Trigger the automatic update immediately")
@@ -440,11 +410,6 @@ async def help(ctx):
     view = disnake.ui.View()
     view.add_item(select)
     await ctx.response.send_message("",embed=embeds[0],view=view)
-@help.error
-async def help_error(ctx,error):
-    print(error)
-    await ctx.channel.send(f"<@560022746973601792> something has gone wrong with {ctx.author.user}'s help command.")
-    await ctx.channel.send(error)
 
 
 @tasks.loop(minutes=2)
