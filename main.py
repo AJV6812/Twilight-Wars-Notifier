@@ -468,10 +468,9 @@ async def update():
         gameurl=game["gameurl"]
         if "justChanged" not in game.keys():
             game["justChanged"]=""
-        print(await asyncio.gather(fetch(client.session,gameurl+"/log")))
-        json.loads(await asyncio.gather(fetch(client.session,gameurl+"/log")))
-        json.loads(await asyncio.gather(fetch(client.session,gameurl+"/summary")))
-        json.loads(await asyncio.gather(fetch(client.session,gameurl+"/players")))
+        json.loads(str(await asyncio.gather(fetch(client.session,gameurl+"/log"))))
+        json.loads(str(await asyncio.gather(fetch(client.session,gameurl+"/summary"))))
+        json.loads(str(await asyncio.gather(fetch(client.session,gameurl+"/players"))))
         try:
             log,gamesummary,players = [json.loads(x) for x in await asyncio.gather(fetch(client.session,gameurl+"/log"),fetch(client.session,gameurl+"/summary"),fetch(client.session,gameurl+"/players"))]
         except json.decoder.JSONDecodeError:
