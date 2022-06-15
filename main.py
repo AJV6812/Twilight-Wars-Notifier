@@ -54,15 +54,15 @@ async def changedefault(ctx,gameurl):
                 await interaction.followup.edit_message(message_id=a.id,view=view)
                 usercallback.trackedplayers = interaction.values
                 #Creates the different players
-                async with client.session.get(gameurl+"/players") as players:
-                    try:
-                        playeroptions = [(x["user"]["username"].strip(" "),x["user"]["_id"]) for x in json.loads(await players.text())]
-                        if playeroptions==None or playeroptions==[]:
-                            raise()
-                    except:
-                        await interaction.followup.send(gameurl+" could not be found")
-                        return
-                    options = [disnake.SelectOption(label=x["user"]["username"].strip(" "),value=x["user"]["_id"]) for x in json.loads(await players.text())]
+            async with client.session.get(gameurl+"/players") as players:
+                try:
+                    playeroptions = [(x["user"]["username"].strip(" "),x["user"]["_id"]) for x in json.loads(await players.text())]
+                    if playeroptions==None or playeroptions==[]:
+                        raise()
+                except:
+                    await interaction.followup.send(gameurl+" could not be found")
+                    return
+                options = [disnake.SelectOption(label=x["user"]["username"].strip(" "),value=x["user"]["_id"]) for x in json.loads(await players.text())]
             select=disnake.ui.Select(options=options,min_values=1,max_values=1)
             select.callback=usercallback
             view = disnake.ui.View()
