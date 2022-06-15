@@ -20,10 +20,13 @@ async def fetch(session, url):
         return str(await response.text())
 
 #This is the command that creates an embed with each notification on it. It basically does nothing but hand it off to another function, this is because a number of other commands have the same functionality
-@client.slash_command(name="viewnotifications",description="Provides a list of all notifications",options=[])
-async def view(ctx):
+@client.slash_command(name="viewnotifications",description="Provides a list of all notifications",options=[disnake.Option(name="AUID",description="This is temporary",required=False)])
+async def view(ctx, auid = None):
+    
     await ctx.response.defer()
-    embed = await outputnotifications(str(ctx.author.id))
+    if auid == None:
+        auid == str(ctx.author.id)
+    embed = await outputnotifications(auid)
     await ctx.followup.send("Notifications: ",embed=embed)
     
 async def changedefault(ctx,gameurl):
