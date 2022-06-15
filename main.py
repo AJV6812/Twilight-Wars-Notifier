@@ -474,6 +474,8 @@ async def update():
                 colour = colours[colour]
                 embed=disnake.Embed(title=gamename,url = gameurl, description = str(f"Waiting for {waitingplayername} to{abilitytext}: {waitingaction}\nRound: {gameround}"),color=colour)#This creates the embed that notifies people
                 embed.set_author(name="Twilight Imperium Reminder",url=gameurl,icon_url = f"https://www.twilightwars.com/img/faction/{players[waitingno]['faction'].replace(' ','%20')}/symbol.png")
+                if "Chaos EST; UCT -5" == waitingplayer:
+                    print("Chaox")
                 if game["lastStep"] == str(gamesummary["step"])+str(waitingplayer) and str(gamesummary["step"])+str(waitingplayer)!= game["justChanged"]: #This makes sure that the notification is only sent if it hasn't been sent yet and it has been at least 2 minutes since it changed
                     if game["0"][waitingplayer]!="":
                         await client.channel.send(f"The game is waiting for {waitingplayername} <@{'> <@'.join(game['0'][waitingplayer].split(','))}>",embed=embed)
