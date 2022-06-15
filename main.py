@@ -473,7 +473,7 @@ async def update():
                 colour = (players[waitingno]["color"])                
                 colour = colours[colour]
                 embed=disnake.Embed(title=gamename,url = gameurl, description = str(f"Waiting for {waitingplayername} to{abilitytext}: {waitingaction}\nRound: {gameround}"),color=colour)#This creates the embed that notifies people
-                embed.set_author(name="Twilight Imperium Reminder",url=gameurl,icon_url = f"https://www.twilightwars.com/img/faction/{players[waitingno]['faction'].replace(' ','%20')}/symbol.png")
+                embed.set_author(name="Twilight Imperium Reminder",url=gameurl,icon_url = f"https://www.twilightwars.com/img/faction/{players[waitingno]['faction'].replace(' ','%20')}/symbol-pixel.png")
                 if "Chaos EST; UCT -5" == waitingplayer:
                     print("Chaox")
                     print(game)
