@@ -123,8 +123,8 @@ async def removeall(ctx,confirmation):
 @client.slash_command(name="quicknotify",description="Use default settings to add notificati#ons",options=[disnake.Option(name="gameurl1",description="Please paste a game url",required=True)]+[disnake.Option(name="gameurl"+str(x),description="You may enter more urls",required=False) for x in range(2,26)])
 async def quicknotify(ctx, gameurl1,gameurl2=None,gameurl3=None,gameurl4=None,gameurl5=None,gameurl6=None,gameurl7=None,gameurl8=None,gameurl9=None,gameurl10=None,gameurl11=None,gameurl12=None,gameurl13=None,gameurl14=None,gameurl15=None,gameurl16=None,gameurl17=None,gameurl18=None,gameurl19=None,gameurl20=None,gameurl21=None,gameurl22=None,gameurl23=None,gameurl24=None,gameurl25=None):
     await ctx.response.defer()    
-    req = requests.get("https://discord.com/api/path/to/the/endpoint")
-    print(req.headers["X-RateLimit-Remaining"])
+    req = json.loads(requests.Session().get("https://discord.com/api/path/to/the/endpoint").text)
+    print(req["X-RateLimit-Remaining"])
     gameurls=[gameurl1,gameurl2,gameurl3,gameurl4,gameurl5,gameurl6,gameurl7,gameurl8,gameurl9,gameurl10,gameurl11,gameurl12,gameurl13,gameurl14,gameurl15,gameurl16,gameurl17,gameurl18,gameurl19,gameurl20,gameurl21,gameurl22,gameurl23,gameurl24,gameurl25]
     gameurls=[x for x in gameurls if x!=None]
     default = client.DATABASE["user"].find_one({"auid":str(ctx.author.id)})
