@@ -146,8 +146,9 @@ async def quicknotify(ctx, gameurl1,gameurl2=None,gameurl3=None,gameurl4=None,ga
             else:
                 await ctx.followup.send(default["TWUsername"]+" is not part of "+gameurl+"\nPlease use /notify for this game")
                 return
-        await changesettings(default["settings"].split(","),gameurl,str(ctx.author.id),ctx,default["TWUser"])
         await setnotification(default["TWUser"],gameurl,log,gamesummary,players,str(ctx.author.id))
+        await changesettings(default["settings"].split(","),gameurl,str(ctx.author.id),ctx,default["TWUser"])
+
     await asyncio.gather(*[onegame(x) for x in gameurls])
     embed = await outputnotifications(str(ctx.author.id))
     await ctx.followup.send("These are your current notifications:",embed=embed)
