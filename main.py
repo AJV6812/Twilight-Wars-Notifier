@@ -556,6 +556,7 @@ async def update():
     await client.session.post("https://www.twilightwars.com/login",data=payload)
 @client.event
 async def on_ready():
+    
     for guild in client.guilds:
         if guild.name == GUILD:
             break
@@ -571,6 +572,7 @@ async def on_ready():
     async with client.session.post("https://www.twilightwars.com/login",data=payload) as response:
         if not update.is_running():
             update.start()
+    print("Number of users: "+str(len(users)))
 
 #wh
 @client.event
