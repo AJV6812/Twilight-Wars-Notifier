@@ -573,7 +573,7 @@ async def on_ready():
         if not update.is_running():
             update.start()
 
-#wh
+
 @client.event
 async def on_error(ctx):
     print(sys.exc_info())
