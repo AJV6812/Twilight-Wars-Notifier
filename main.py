@@ -544,7 +544,7 @@ async def update():
     await asyncio.gather(*[getgames(x) for x in games]) #Does all the games asynchronously
     #print("Update concluded")
     #print("Current users: "+", ".join([str((await client.fetch_user(int(x))).name) for x in users]))
-    #print("Number of users: "+str(len(users)))
+    print("Number of users: "+str(len(users)))
     end=time.time()
     #print("Time taken: "+str(end-start))
     await client.session.close()
@@ -572,7 +572,6 @@ async def on_ready():
     async with client.session.post("https://www.twilightwars.com/login",data=payload) as response:
         if not update.is_running():
             update.start()
-    print("Number of users: "+str(len(users)))
 
 #wh
 @client.event
