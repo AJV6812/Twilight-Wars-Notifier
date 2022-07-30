@@ -168,8 +168,8 @@ async def removeall(ctx,confirmation):
         await ctx.followup.send("Confirmation must be 'Y' or 'y'")
 
 #Ignore quicknotify, nobody uses it anyway so you can just pretend it doesn't exist.
-"""@client.slash_command(name="quicknotify",description="Use default settings to add notificati#ons",options=[disnake.Option(name="gameurl1",description="Please paste a game url",required=True)]+[disnake.Option(name="gameurl"+str(x),description="You may enter more urls",required=False) for x in range(2,26)])
-async def quicknotify(ctx, gameurl1,gameurl2=None,gameurl3=None,gameurl4=None,gameurl5=None,gameurl6=None,gameurl7=None,gameurl8=None,gameurl9=None,gameurl10=None,gameurl11=None,gameurl12=None,gameurl13=None,gameurl14=None,gameurl15=None,gameurl16=None,gameurl17=None,gameurl18=None,gameurl19=None,gameurl20=None,gameurl21=None,gameurl22=None,gameurl23=None,gameurl24=None,gameurl25=None):
+@client.slash_command(name="bulknotify",description="Use default settings to add notificati#ons",options=[disnake.Option(name="gameurl1",description="Please paste a game url",required=True)]+[disnake.Option(name="gameurl"+str(x),description="You may enter more urls",required=False) for x in range(2,26)])
+async def bulknotify(ctx, gameurl1,gameurl2=None,gameurl3=None,gameurl4=None,gameurl5=None,gameurl6=None,gameurl7=None,gameurl8=None,gameurl9=None,gameurl10=None,gameurl11=None,gameurl12=None,gameurl13=None,gameurl14=None,gameurl15=None,gameurl16=None,gameurl17=None,gameurl18=None,gameurl19=None,gameurl20=None,gameurl21=None,gameurl22=None,gameurl23=None,gameurl24=None,gameurl25=None):
     await ctx.response.defer()    
     gameurls=[gameurl1,gameurl2,gameurl3,gameurl4,gameurl5,gameurl6,gameurl7,gameurl8,gameurl9,gameurl10,gameurl11,gameurl12,gameurl13,gameurl14,gameurl15,gameurl16,gameurl17,gameurl18,gameurl19,gameurl20,gameurl21,gameurl22,gameurl23,gameurl24,gameurl25]
     gameurls=[x for x in gameurls if x!=None]
@@ -440,6 +440,7 @@ async def help(ctx):
             
     embeds = [disnake.Embed(title="Help",description = """This bot has been designed to mimic the notification system of the Twilight Wars web app for people who are unable to get notifications. Please message Al Vergis if you require any assistance""",colour=disnake.Colour.blue()) for x in range(3)]
     embeds[0].add_field(name="Normal Notify", value = "To get started type '/notify ' then paste the URL of the game that you want to be monitored. A select menu will appear which will ask you to pick your TW Username. After you have chosen your username, the bot will confirm that the notification has been saved.",inline=False)
+    embeds[0].add_field(name="Bulk Notify", value="To add multiple notifications, use '/bulknotify' followed by the URL of a game. If you click the end of the message it will give you the option to add another field to the command, which you can paste the next URL into. You can add between 1 and 25 games using the method.")
     embeds[0].add_field(name="Quick Notify", value="To all of your active public games, use '/quicknotify'. The first time you use this, you may be prompted to use /setdefault. Once you have done this, then the bot will search through all public games and notify you when any of them are waiting for you.")
 
     embeds[1].add_field(name="Advanced Commands",value="""There are currently 7 commands:
