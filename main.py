@@ -34,21 +34,25 @@ async def findgames(session,gameids,playerid, usercount=0,lastGameId = None):
         gameids = await findgames(session,gameids,playerid, usercount,response["games"][-1]["_id"])
     return gameids
 
-@client.slash_command(name="autonotify",description="Get notifications for every public game you are part of")
+@client.slash_command(name="autonotify",description="Get notifications for every public game you are part of. May take up to one minute.")
 async def autonotify(ctx):
-    await ctx.response.defer()
-    default = client.DATABASE["user"].find_one({"auid":str(ctx.author.id)})
-    if default == None:
-        await ctx.send("Please use /setdefault to change your default settings")
-        return
-    
-    games = await findgames(client.session,list(),default["TWUser"])
-    for game in games:
-        gameurl = "https://www.twilightwars.com/games/"+game["_id"]
-        log,gamesummary,players = [json.loads(x) for x in await asyncio.gather(fetch(client.session,gameurl+"/log"),fetch(client.session,gameurl+"/summary"),fetch(client.session,gameurl+"/players"))]
-        await setnotification(default["TWUser"],gameurl,log,gamesummary,players,str(ctx.author.id))
-    embed = await outputnotifications(str(ctx.author.id))
-    await ctx.followup.send("These are your current notifications:",embed=embed)
+    try:
+        await ctx.response.defer()
+        default = client.DATABASE["user"].find_one({"auid":str(ctx.author.id)})
+        if default == None:
+            await ctx.send("Please use /setdefault to change your default settings")
+            return
+
+        games = await findgames(client.session,list(),default["TWUser"])
+        for game in games:
+            gameurl = "https://www.twilightwars.com/games/"+game["_id"]
+            log,gamesummary,players = [json.loads(x) for x in await asyncio.gather(fetch(client.session,gameurl+"/log"),fetch(client.session,gameurl+"/summary"),fetch(client.session,gameurl+"/players"))]
+            await setnotification(default["TWUser"],gameurl,log,gamesummary,players,str(ctx.author.id))
+        embed = await outputnotifications(str(ctx.author.id))
+        await ctx.followup.send("These are your current notifications:",embed=embed)
+    except:
+        await ctx.channel.send("<@560022746973601792> something has gone wrong.")
+
 
 #This is the command that creates an embed with each notification on it. It basically does nothing but hand it off to another function, this is because a number of other commands have the same functionality
 @client.slash_command(name="viewnotifications",description="Provides a list of all notifications",options=[])
@@ -424,6 +428,8 @@ async def help(ctx):
     embeds = [disnake.Embed(title="Help",description = """This bot has been designed to mimic the notification system of the Twilight Wars web app for people who are unable to get notifications. Please message Al Vergis if you require any assistance""",colour=disnake.Colour.blue()) for x in range(3)]
     embeds[0].add_field(name="Get Started", value = "To get started type '/notify ' then paste the URL of the game that you want to be monitored. A select menu will appear which will ask you to pick your TW Username. After you have chosen your username, the bot will confirm that the notification has been saved.",inline=False)
     embeds[0].add_field(name="Quick Notify", value="To add multiple notifications, use '/quicknotify' followed by the URL of a game. If you click the end of the message it will give you the option to add another field to the command, which you can paste the next URL into. You can add between 1 and 25 games using the method.")
+    embeds[0].add_field(name="Auto Notify", value="To all of your active public games, use '/autonotify'. The first time you use this, you may be prompted to use /setdefault. Once you have done this, then the bot will search through all public games and notify you when any of them are waiting for you.")
+
     embeds[1].add_field(name="Advanced Commands",value="""There are currently 7 commands:
                           /notify [gameurl]: adds a new notification
                           /quicknotify [gameurls]: allows for multiple games to be added at the same time
