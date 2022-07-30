@@ -18,6 +18,37 @@ client.DATABASE=dbclient["test"]
 async def fetch(session, url):
     async with session.get(url) as response:
         return str(await response.text())
+async def findgames(session,gameids,playerid, usercount=0,lastGameId = None):
+    if lastGameId == None:
+        response = json.loads(await(await session.get(f"https://www.twilightwars.com/find-a-game/search?status=Active")).text())
+    else:
+        response = json.loads(await(await session.get(f"https://www.twilightwars.com/find-a-game/search?status=Active&lastGameId="+lastGameId)).text())
+        
+    for game in response["games"]:
+        for player in game["players"]:
+            if playerid in player["user"]["_id"]:
+                gameids.append(game)
+        for user in game["players"]:
+            usercount+=1
+    if response["canSeeMore"]:
+        gameids = await findgames(session,gameids,playerid, usercount,response["games"][-1]["_id"])
+    return gameids
+
+@client.slash_command(name="autonotify",description="Get notifications for every public game you are part of")
+async def autonotify(ctx):
+    await ctx.response.defer()
+    default = client.DATABASE["user"].find_one({"auid":str(ctx.author.id)})
+    if default == None:
+        await ctx.send("Please use /setdefault to change your default settings")
+        return
+    
+    games = await findgames(client.session,list(),default["TWUser"])
+    for game in games:
+        gameurl = "https://www.twilightwars.com/games/"+game["_id"]
+        log,gamesummary,players = [json.loads(x) for x in await asyncio.gather(fetch(client.session,gameurl+"/log"),fetch(client.session,gameurl+"/summary"),fetch(client.session,gameurl+"/players"))]
+        await setnotification(default["TWUser"],gameurl,log,gamesummary,players,str(ctx.author.id))
+    embed = await outputnotifications(str(ctx.author.id))
+    await ctx.followup.send("These are your current notifications:",embed=embed)
 
 #This is the command that creates an embed with each notification on it. It basically does nothing but hand it off to another function, this is because a number of other commands have the same functionality
 @client.slash_command(name="viewnotifications",description="Provides a list of all notifications",options=[])
@@ -25,7 +56,7 @@ async def view(ctx):
     await ctx.response.defer()
     embed = await outputnotifications(str(ctx.author.id))
     await ctx.followup.send("Notifications: ",embed=embed)
-    
+   
 async def changedefault(ctx,gameurl):
     defaultdic = {"auid":str(ctx.author.id),
      "settings":"",
