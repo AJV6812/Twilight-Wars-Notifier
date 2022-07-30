@@ -450,7 +450,7 @@ async def help(ctx):
                           /viewnotifications: shows current notification settings
                           /update: triggers the automatic update immediately
                           /setdefault [gameurl]: changes your default settings
-                          /removeall {confirmation]: removes all notifications""",inline=False)
+                          /removeall [confirmation]: removes all notifications""",inline=False)
     embeds[2].add_field(name="Notification Settings",value="""There are 5 settings that can be used with the config command:
                     Notify when game is waiting on you (default)
                     Notify after every change of window
