@@ -52,6 +52,19 @@ async def autonotify(ctx):
         await ctx.followup.send("These are your current notifications:",embed=embed)
     except:
         await ctx.channel.send("<@560022746973601792> something has gone wrong.")
+    await ctx.response.defer()
+    default = client.DATABASE["user"].find_one({"auid":str(ctx.author.id)})
+    if default == None:
+        await ctx.send("Please use /setdefault to change your default settings")
+        return
+
+    games = await findgames(client.session,list(),default["TWUser"])
+    for game in games:
+        gameurl = "https://www.twilightwars.com/games/"+game["_id"]
+        log,gamesummary,players = [json.loads(x) for x in await asyncio.gather(fetch(client.session,gameurl+"/log"),fetch(client.session,gameurl+"/summary"),fetch(client.session,gameurl+"/players"))]
+        await setnotification(default["TWUser"],gameurl,log,gamesummary,players,str(ctx.author.id))
+    embed = await outputnotifications(str(ctx.author.id))
+    await ctx.followup.send("These are your current notifications:",embed=embed)
 
 
 #This is the command that creates an embed with each notification on it. It basically does nothing but hand it off to another function, this is because a number of other commands have the same functionality
