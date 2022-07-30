@@ -40,7 +40,7 @@ async def quicknotify(ctx):
         await ctx.response.defer()
         default = client.DATABASE["user"].find_one({"auid":str(ctx.author.id)})
         if default == None:
-            await ctx.send("Please use /setdefault to change your default settings")
+            await ctx.send("Because this is the first time you are using this command, please use /setdefault to change your default settings")
             return
 
         games = await findgames(client.session,list(),default["TWUser"])
