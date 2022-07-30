@@ -443,7 +443,7 @@ async def update():
             #await client.channel.send(f"<@"+'> <@'.join(peopleinvolved)+">\n"+gamename+" has mysteriously disappeared")
             print(gameurl)
             print(game)
-            #client.DATABASE["games"].delete_one({"gameurl":gameurl})
+            client.DATABASE["games"].delete_one({"gameurl":gameurl})
             return
         if game["users"]=="":
             client.DATABASE["games"].delete_one({"gameurl":game["gameurl"]}) #If everyone's removed their notifications from a game, then there's no point in keeping it aroun
