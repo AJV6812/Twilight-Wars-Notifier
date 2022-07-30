@@ -514,7 +514,7 @@ async def update():
         else:
             waitingplayer = players[gamesummary["turn"]["player"]["current"]-1]["user"]["_id"].strip()
             waitingplayername = players[gamesummary["turn"]["player"]["current"]-1]["user"]["username"].strip()
-el            waitingno = gamesummary["turn"]["player"]["current"]-1
+            waitingno = gamesummary["turn"]["player"]["current"]-1
             abilitytext = ""
         if "0" in game.keys():
             if waitingplayer in game["0"].keys(): #If we have records of the person the game is waiting on
