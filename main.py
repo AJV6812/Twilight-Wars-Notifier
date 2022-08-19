@@ -26,7 +26,7 @@ async def findgames(session,gameids,playerid, usercount=0,lastGameId = None):
         
     for game in response["games"]:
         for player in game["players"]:
-            if "_id" in player["user"].keys():
+            if player["user"] != None:
                 if playerid in player["user"]["_id"]:
                     gameids.append(game)
                 
