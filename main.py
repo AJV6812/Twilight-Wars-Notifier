@@ -36,8 +36,9 @@ async def findgames(session,gameids,playerid, usercount=0,lastGameId = None):
 
 @client.slash_command(name="quicknotify",description="Get notifications for every public game you are part of. May take up to one minute.")
 async def quicknotify(ctx):
+    await ctx.response.defer()
     try:
-        await ctx.response.defer()
+        
         default = client.DATABASE["user"].find_one({"auid":str(ctx.author.id)})
         if default == None:
             await ctx.send("Because this is the first time you are using this command, please use /setdefault to change your default settings")
@@ -52,7 +53,6 @@ async def quicknotify(ctx):
         await ctx.followup.send("These are your current notifications:",embed=embed)
     except:
         await ctx.channel.send("<@560022746973601792> something has gone wrong.")
-    await ctx.response.defer()
     default = client.DATABASE["user"].find_one({"auid":str(ctx.author.id)})
     if default == None:
         await ctx.send("Please use /setdefault to change your default settings")
