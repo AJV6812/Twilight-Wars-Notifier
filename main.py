@@ -201,7 +201,7 @@ async def bulknotify(ctx, gameurl1,gameurl2=None,gameurl3=None,gameurl4=None,gam
 
     await asyncio.gather(*[onegame(x) for x in gameurls])
     embed = await outputnotifications(str(ctx.author.id))
-    await ctx.followup.send("These are your current notifications:",embed=embed)
+    await ctx.followup.send("These are your current notifications:",embed=embed)#
 
 #Despite the title, all this does is create an embed with a users notifications on it. It is likely not what you are looking for.
 async def outputnotifications(auid):
