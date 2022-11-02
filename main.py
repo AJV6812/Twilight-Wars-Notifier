@@ -584,7 +584,7 @@ async def update():
                                         await client.channel.send(f"<@{'> <@'.join(game['3'].split(','))}>\nStrategy Card played in {gamename}")
                             events.append(f"{player['user']['username']}: {log[count]['event'].title()}.")
                 else:
-                    events.append(f"{log[count]['event'].title()}")
+                    events.append(f"{log[count]['event'].title()}.")
                 count += 1
                 if count >= len(log):
                     break
