@@ -7,10 +7,10 @@ import os
 import pymongo
 import aiohttp
 import sys
-import requests
 
 
-client = commands.Bot(command_prefix = "/", help_command = None,sync_commands_debug=True, sync_commands=True)
+
+client = commands.InteractionBot(command_prefix = "/", help_command = None,sync_commands_debug=True, sync_commands=True)
 GUILD = "Another test server?"
 dbclient = pymongo.MongoClient("mongodb+srv://mongo:"+os.environ["MONGO_PASSWORD"]+"@games.tyn0n.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
 client.DATABASE=dbclient["test"]
@@ -201,7 +201,7 @@ async def bulknotify(ctx, gameurl1,gameurl2=None,gameurl3=None,gameurl4=None,gam
 
     await asyncio.gather(*[onegame(x) for x in gameurls])
     embed = await outputnotifications(str(ctx.author.id))
-    await ctx.followup.send("These are your current notifications:",embed=embed)#
+    await ctx.followup.send("These are your current notifications:",embed=embed)
 
 #Despite the title, all this does is create an embed with a users notifications on it. It is likely not what you are looking for.
 async def outputnotifications(auid):
