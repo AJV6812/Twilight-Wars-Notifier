@@ -51,6 +51,7 @@ async def quicknotify(ctx):
             gameurl = "https://www.twilightwars.com/games/"+game["_id"]
             log,gamesummary,players = [json.loads(x) for x in await asyncio.gather(fetch(client.session,gameurl+"/log"),fetch(client.session,gameurl+"/summary"),fetch(client.session,gameurl+"/players"))]
             await setnotification(default["TWUser"],gameurl,log,gamesummary,players,str(ctx.author.id))
+            await changesettings(default["settings"].split(","),gameurl,str(ctx.author.id),ctx,default["TWUser"])
         embed = await outputnotifications(str(ctx.author.id))
         await ctx.followup.send("These are your current notifications:",embed=embed)
     except:
