@@ -469,7 +469,6 @@ async def help(ctx):
 
 @tasks.loop(minutes=2)
 async def update():
-    print(await findgames(client.session,list(),"6365c9a572461c0016594da8"))
     start=time.time()
     #Starts the timer (for data analysis later) sets up all the colours for the embeds grabs the game database tells, me what loop we are up to
     colours = {"magenta":disnake.Colour.magenta(),"black":0,"purple": disnake.Colour.purple(),"red":disnake.Colour.red(),"yellow":disnake.Colour.yellow(), "green":disnake.Colour.green(),"blue":disnake.Colour.blue(),"orange":disnake.Colour.orange()}
