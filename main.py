@@ -184,13 +184,16 @@ async def bulknotify(ctx, gameurl1,gameurl2=None,gameurl3=None,gameurl4=None,gam
     while default == None and timeout > 0:
         await asyncio.sleep(1)
         timeout-=1
+    default = client.DATABASE["user"].find_one({"auid":str(ctx.author.id)})
     async def onegame(gameurl):
         try:
             log,gamesummary,players = [json.loads(x) for x in await asyncio.gather(fetch(client.session,gameurl+"/log"),fetch(client.session,gameurl+"/summary"),fetch(client.session,gameurl+"/players"))]
         except:
             await ctx.followup.send("Could not find "+gameurl)
             return
+        default = client.DATABASE["user"].find_one({"auid":str(ctx.author.id)})
         playerids = [x["user"]["_id"] for x in players]
+        
         if default["TWUser"] not in playerids:
             if default["TWUser"]=="":
                 default["TWUser"]=None
@@ -199,7 +202,7 @@ async def bulknotify(ctx, gameurl1,gameurl2=None,gameurl3=None,gameurl4=None,gam
                 return
         await setnotification(default["TWUser"],gameurl,log,gamesummary,players,str(ctx.author.id))
         await changesettings(default["settings"].split(","),gameurl,str(ctx.author.id),ctx,default["TWUser"])
-
+    
     await asyncio.gather(*[onegame(x) for x in gameurls])
     embed = await outputnotifications(str(ctx.author.id))
     await ctx.followup.send("These are your current notifications:",embed=embed)
@@ -496,7 +499,7 @@ async def update():
             #await client.channel.send(f"<@"+'> <@'.join(peopleinvolved)+">\n"+gamename+" has mysteriously disappeared")
             print(gameurl)
             print(game)
-            client.DATABASE["games"].delete_one({"gameurl":gameurl})
+            #client.DATABASE["games"].delete_one({"gameurl":gameurl})
             return
         if game["users"]=="":
             client.DATABASE["games"].delete_one({"gameurl":game["gameurl"]}) #If everyone's removed their notifications from a game, then there's no point in keeping it aroun
