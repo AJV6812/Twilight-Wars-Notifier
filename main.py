@@ -470,7 +470,7 @@ async def help(ctx):
     await ctx.response.send_message("",embed=embeds[0],view=view)
 
 
-@tasks.loop(minutes=2)
+@tasks.loop(minutes=5)
 async def update():
     start=time.time()
     #Starts the timer (for data analysis later) sets up all the colours for the embeds grabs the game database tells, me what loop we are up to
