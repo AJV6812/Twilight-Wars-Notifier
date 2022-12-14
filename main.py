@@ -596,7 +596,7 @@ async def update():
         if '4' in game.keys():
             if game["4"] != "":
                 for i in reversed(events):                   
-                    await client.channel.send(f"<@{'> <@'.join(game['4'].split(','))}>\n{i.title()[:-1]} in {gamename}")
+                    await client.get_channel(1040776233908178984).send(f"<@{'> <@'.join(game['4'].split(','))}>\n{i.title()[:-1]} in {gamename}")
     await asyncio.gather(*[getgames(x) for x in games]) #Does all the games asynchronously
     #print("Update concluded")
     #print("Current users: "+", ".join([str((await client.fetch_user(int(x))).name) for x in users]))
