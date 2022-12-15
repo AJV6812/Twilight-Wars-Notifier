@@ -538,7 +538,7 @@ async def update():
                 if game["lastStep"] == str(gamesummary["step"])+str(waitingplayer) and str(gamesummary["step"])+str(waitingplayer)!= game["justChanged"]: #This makes sure that the notification is only sent if it hasn't been sent yet and it has been at least 2 minutes since it changed
                     if game["0"][waitingplayer]!="":
                         await client.channel.send(f"The game is waiting for {waitingplayername} <@{'> <@'.join(game['0'][waitingplayer].split(','))}>",embed=embed)
-                        #print(f"{waitingplayername} was notified")
+                        print(f"{waitingplayername} was notified")
                     #else:
                         #print(waitingplayername+" didn't receive a notification.")
                     if "1" in game.keys():
