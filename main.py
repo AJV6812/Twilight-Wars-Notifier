@@ -9,10 +9,10 @@ import aiohttp
 import sys
 
 
-
 client = commands.InteractionBot(command_prefix = "/", help_command = None,sync_commands_debug=True, sync_commands=True)
-GUILD = "Another test server?"
 dbclient = pymongo.MongoClient("mongodb+srv://mongo:"+os.environ["MONGO_PASSWORD"]+"@games.tyn0n.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
+
+
 client.DATABASE=dbclient["test"]
 #This is so I can get information from the server asynchronously
 async def fetch(session, url):
@@ -51,7 +51,6 @@ async def quicknotify(ctx):
             gameurl = "https://www.twilightwars.com/games/"+game["_id"]
             log,gamesummary,players = [json.loads(x) for x in await asyncio.gather(fetch(client.session,gameurl+"/log"),fetch(client.session,gameurl+"/summary"),fetch(client.session,gameurl+"/players"))]
             await setnotification(default["TWUser"],gameurl,log,gamesummary,players,str(ctx.author.id))
-            await changesettings(default["settings"].split(","),gameurl,str(ctx.author.id),ctx,default["TWUser"])
         embed = await outputnotifications(str(ctx.author.id))
         await ctx.followup.send("These are your current notifications:",embed=embed)
     except:
@@ -184,16 +183,13 @@ async def bulknotify(ctx, gameurl1,gameurl2=None,gameurl3=None,gameurl4=None,gam
     while default == None and timeout > 0:
         await asyncio.sleep(1)
         timeout-=1
-    default = client.DATABASE["user"].find_one({"auid":str(ctx.author.id)})
     async def onegame(gameurl):
         try:
             log,gamesummary,players = [json.loads(x) for x in await asyncio.gather(fetch(client.session,gameurl+"/log"),fetch(client.session,gameurl+"/summary"),fetch(client.session,gameurl+"/players"))]
         except:
             await ctx.followup.send("Could not find "+gameurl)
             return
-        default = client.DATABASE["user"].find_one({"auid":str(ctx.author.id)})
         playerids = [x["user"]["_id"] for x in players]
-        
         if default["TWUser"] not in playerids:
             if default["TWUser"]=="":
                 default["TWUser"]=None
@@ -202,7 +198,7 @@ async def bulknotify(ctx, gameurl1,gameurl2=None,gameurl3=None,gameurl4=None,gam
                 return
         await setnotification(default["TWUser"],gameurl,log,gamesummary,players,str(ctx.author.id))
         await changesettings(default["settings"].split(","),gameurl,str(ctx.author.id),ctx,default["TWUser"])
-    
+
     await asyncio.gather(*[onegame(x) for x in gameurls])
     embed = await outputnotifications(str(ctx.author.id))
     await ctx.followup.send("These are your current notifications:",embed=embed)
@@ -472,8 +468,9 @@ async def help(ctx):
 
 @tasks.loop(minutes=5)
 async def update():
+    
     start=time.time()
-    #Starts the timer (for data analysis later) sets up all the colours for the embeds grabs the game database tells, me what loop we are up to
+    #Starts the timer (for data analysis later) sets up all the colours for the embeds grabs the game database, tells me what loop we are up to
     colours = {"magenta":disnake.Colour.magenta(),"black":0,"purple": disnake.Colour.purple(),"red":disnake.Colour.red(),"yellow":disnake.Colour.yellow(), "green":disnake.Colour.green(),"blue":disnake.Colour.blue(),"orange":disnake.Colour.orange()}
     games = client.DATABASE['games'].find()
     print()
@@ -532,18 +529,17 @@ async def update():
                 colour = colours[colour]
                 embed=disnake.Embed(title=gamename,url = gameurl, description = str(f"Waiting for {waitingplayername} to{abilitytext}: {waitingaction}\nRound: {gameround}"),color=colour)#This creates the embed that notifies people
                 embed.set_author(name="Twilight Imperium Reminder",url=gameurl,icon_url = f"https://www.twilightwars.com/img/faction/{players[waitingno]['faction'].replace(' ','%20')}/symbol-pixel.png")
-                if "Chaos EST; UCT -5" == waitingplayer:
-                    print("Chaox")
-                    print(game)
+                
                 if game["lastStep"] == str(gamesummary["step"])+str(waitingplayer) and str(gamesummary["step"])+str(waitingplayer)!= game["justChanged"]: #This makes sure that the notification is only sent if it hasn't been sent yet and it has been at least 2 minutes since it changed
                     if game["0"][waitingplayer]!="":
                         await client.channel.send(f"The game is waiting for {waitingplayername} <@{'> <@'.join(game['0'][waitingplayer].split(','))}>",embed=embed)
-                        print(f"{waitingplayername} was notified")
+                        #print(f"{waitingplayername} was notified")
                     #else:
                         #print(waitingplayername+" didn't receive a notification.")
                     if "1" in game.keys():
                         if game["1"]!="":
                             await client.channel.send(f"<@{'> <@'.join(game['1'].split(','))}> The game is waiting on {waitingplayername}",embed=embed)
+                    #client.DATABASE["games"].update_one({"gameurl":gameurl},{"$set":{"lastStep":str(gamesummary["step"])+str(waitingplayer),"justChanged":game["lastStep"]}})
                         
                 #elif game["lastStep"]==str(gamesummary["step"])+str(waitingplayer):
                     #print(f"{waitingplayername} has already been notified")
@@ -551,7 +547,7 @@ async def update():
                     #print(f"{waitingplayername} will receive a notification next cycle")
                 #Updates the dictionary so that notifications are not sent twice
                 client.DATABASE["games"].update_one({"gameurl":gameurl},{"$set":{"lastStep":str(gamesummary["step"])+str(waitingplayer),"justChanged":game["lastStep"]}})
-
+                
             else:
                 waitingaction = gamesummary["step"]
                 gameround = gamesummary["round"]
@@ -595,8 +591,10 @@ async def update():
             client.DATABASE['games'].update_one({"gameurl":gameurl},{"$set":{"lastLog":lastLog}})
         if '4' in game.keys():
             if game["4"] != "":
-                for i in reversed(events):                   
-                    await client.get_channel(1040776233908178984).send(f"<@{'> <@'.join(game['4'].split(','))}>\n{i.title()[:-1]} in {gamename}")
+                for i in reversed(events):
+                    await client.channel.send(f"<@{'> <@'.join(game['4'].split(','))}>\n{i.title()[:-1]} in {gamename}")            
+    
+        
     await asyncio.gather(*[getgames(x) for x in games]) #Does all the games asynchronously
     #print("Update concluded")
     #print("Current users: "+", ".join([str((await client.fetch_user(int(x))).name) for x in users]))
@@ -613,9 +611,8 @@ async def update():
 @client.event
 async def on_ready():
     
-    for guild in client.guilds:
-        if guild.name == GUILD:
-            break
+    
+        
     client.channel = await client.fetch_channel(970285338901745695)
     #await client.channel.send("I'm alive")
     #await asyncio.sleep(30)
@@ -628,7 +625,7 @@ async def on_ready():
     async with client.session.post("https://www.twilightwars.com/login",data=payload) as response:
         if not update.is_running():
             update.start()
-
+    
 
 @client.event
 async def on_error(ctx):
