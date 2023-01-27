@@ -7,6 +7,7 @@ import os
 import pymongo
 import aiohttp
 import sys
+import requests
 
 
 client = commands.InteractionBot(command_prefix = "/", help_command = None,sync_commands_debug=True, sync_commands=True)
@@ -39,6 +40,7 @@ async def findgames(session,gameids,playerid, usercount=0,lastGameId = None):
 @client.slash_command(name="quicknotify",description="Get notifications for every public game you are part of. May take up to one minute.")
 async def quicknotify(ctx):
     await ctx.response.defer()
+    
     try:
         
         default = client.DATABASE["user"].find_one({"auid":str(ctx.author.id)})
@@ -493,7 +495,7 @@ async def update():
         except json.decoder.JSONDecodeError:
             peopleinvolved = []
             peopleinvolved = game["users"].split(",")
-            #await client.channel.send(f"<@"+'> <@'.join(peopleinvolved)+">\n"+gamename+" has mysteriously disappeared")
+            await client.dmchannel.send(f"<@"+'> <@'.join(peopleinvolved)+">\n"+gamename+" has mysteriously disappeared")
             print(gameurl)
             print(game)
             #client.DATABASE["games"].delete_one({"gameurl":gameurl})
@@ -614,6 +616,9 @@ async def on_ready():
     
         
     client.channel = await client.fetch_channel(970285338901745695)
+    client.dmchannel = (await client.fetch_user(560022746973601792))
+    client.dmchannel = await client.dmchannel.create_dm()
+    await client.dmchannel.send(f"Awake")
     #await client.channel.send("I'm alive")
     #await asyncio.sleep(30)
     client.loop=asyncio.get_event_loop()
@@ -627,12 +632,6 @@ async def on_ready():
             update.start()
     
 
-@client.event
-async def on_error(ctx):
-    print(sys.exc_info())
-    print(client.user)
-    await client.channel.send("<@560022746973601792> something has gone wrong.")
-    await client.channel.send(sys.exc_info())
 try:
     client.run(os.environ["DISCORD_TOKEN"])
 except disnake.errors.HTTPException as e:
