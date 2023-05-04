@@ -10,7 +10,7 @@ import sys
 import requests
 
 
-client = commands.InteractionBot(command_prefix = "/", help_command = None,sync_commands_debug=True, sync_commands=True)
+client = commands.InteractionBot(help_command = None,sync_commands_debug=True, sync_commands=True)
 dbclient = pymongo.MongoClient("mongodb+srv://mongo:"+os.environ["MONGO_PASSWORD"]+"@games.tyn0n.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
 
 
