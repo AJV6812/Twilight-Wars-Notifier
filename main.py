@@ -7,10 +7,8 @@ import os
 import pymongo
 import aiohttp
 import sys
-import requests
 
-
-client = commands.InteractionBot(help_command = None,sync_commands_debug=True, sync_commands=True)
+client = commands.InteractionBot()#command_prefix = "/", help_command = None,sync_commands_debug=True, sync_commands=True)
 dbclient = pymongo.MongoClient("mongodb+srv://mongo:"+os.environ["MONGO_PASSWORD"]+"@games.tyn0n.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
 
 
@@ -498,7 +496,7 @@ async def update():
             await client.dmchannel.send(f"<@"+'> <@'.join(peopleinvolved)+">\n"+gamename+" has mysteriously disappeared")
             print(gameurl)
             print(game)
-            #client.DATABASE["games"].delete_one({"gameurl":gameurl})
+            client.DATABASE["games"].delete_one({"gameurl":gameurl})
             return
         if game["users"]=="":
             client.DATABASE["games"].delete_one({"gameurl":game["gameurl"]}) #If everyone's removed their notifications from a game, then there's no point in keeping it aroun
@@ -618,7 +616,7 @@ async def on_ready():
     client.channel = await client.fetch_channel(970285338901745695)
     client.dmchannel = (await client.fetch_user(560022746973601792))
     client.dmchannel = await client.dmchannel.create_dm()
-    await client.dmchannel.send(f"Awake")
+    await client.dmchannel.send(f"I'M AWAKE")
     #await client.channel.send("I'm alive")
     #await asyncio.sleep(30)
     client.loop=asyncio.get_event_loop()
