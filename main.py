@@ -196,6 +196,8 @@ async def bulknotify(ctx, gameurl1,gameurl2=None,gameurl3=None,gameurl4=None,gam
         await asyncio.sleep(1)
         timeout-=1
     async def onegame(gameurl):
+        if "twilightwars" not in gameurl:
+            gameurl = "https://www.twilightwars.com/games/"+gameurl
         try:
             log,gamesummary,players = [json.loads(x) for x in await asyncio.gather(fetch(client.session,gameurl+"/log"),fetch(client.session,gameurl+"/summary"),fetch(client.session,gameurl+"/players"))]
         except:
@@ -404,6 +406,8 @@ async def notify(ctx,gameurl):
 
         else:
             await interaction.response.send_message(f"You are not the original author")
+    if "twilightwars" not in gameurl:
+        gameurl = "https://www.twilightwars.com/games/"+gameurl
     try: #Uses aiohttp to get the information about the game (it does this twice just in case someone only sent the Game ID rather than the URL
         async with client.session.get(gameurl+"/players") as players:
             log,gamesummary,players = [json.loads(x) for x in await asyncio.gather(fetch(client.session,gameurl+"/log"),fetch(client.session,gameurl+"/summary"),fetch(client.session,gameurl+"/players"))]
@@ -411,16 +415,8 @@ async def notify(ctx,gameurl):
             if players == []: #Just in case either private games get patched or someone sends a valid URL that leads to no game (it is possible)
                 raise()
     except:
-        try:
-            async with client.session.get("https://www.twilightwars.com/games/"+gameurl+"/players") as players:
-                gameurl = "https://www.twilightwars.com/games/"+gameurl
-                log,gamesummary,players = [json.loads(x) for x in await asyncio.gather(fetch(client.session,gameurl+"/log"),fetch(client.session,gameurl+"/summary"),fetch(client.session,gameurl+"/players"))]
-                playeroptions1 = [(x["user"]["username"].strip(" "),x["user"]["_id"]) for x in players]
-                if players == []:
-                    raise()
-        except:
-            await ctx.followup.send(f"Could not find: {gameurl}")
-            return
+        await ctx.followup.send(f"Could not find: {gameurl}")
+        return
         
     playeroptions = [disnake.SelectOption(label=x[0],value=x[1]) for x in playeroptions1]
     select = disnake.ui.Select(options=playeroptions, placeholder="Choose your TW Account name...",min_values=1,max_values=1)
