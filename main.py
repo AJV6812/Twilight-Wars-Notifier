@@ -1160,6 +1160,8 @@ async def update():
     try:
         await asyncio.gather(*gameAsync)  # Does all the games asynchronously
     except:
+        await client.dmchannel.send(f"Bot failed, restarting.")
+        await client.session.close()
         await asyncio.sleep(60*10)
         await update.restart()
         return
