@@ -1160,9 +1160,8 @@ async def update():
     try:
         await asyncio.gather(*gameAsync)  # Does all the games asynchronously
     except:
-        update.stop()
         await asyncio.sleep(60)
-        update.start()
+        await update.restart()
         return
     if len(client.deleted) < len(gameAsync) / 10:
         for gameurl, gamename, peopleinvolved in client.deleted:
