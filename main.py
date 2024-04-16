@@ -369,8 +369,6 @@ async def bulknotify(
         gameurl24,
         gameurl25,
     ]
-    if "twilightwars" not in gameurl1:
-        gameurl1 = "https://www.twilightwars.com/games/" + gameurl1
     gameurls = [x for x in gameurls if x != None]
     default = client.DATABASE["user"].find_one({"auid": str(ctx.author.id)})
     if default == None:
@@ -380,13 +378,10 @@ async def bulknotify(
         default = await changedefault(ctx, gameurl1)
     timeout = 600
     while default == None and timeout > 0:
-        default = client.DATABASE["user"].find_one({"auid": str(ctx.author.id)})
         await asyncio.sleep(1)
         timeout -= 1
 
     async def onegame(gameurl):
-        if "twilightwars" not in gameurl:
-            gameurl = "https://www.twilightwars.com/games/" + gameurl
         try:
             log, gamesummary, players = [
                 json.loads(x)
@@ -398,9 +393,11 @@ async def bulknotify(
             ]
         except:
             await ctx.followup.send("Could not find " + gameurl)
+            await ctx.followup.send(
+                f"Please note that the bot cannot find games in the lobby phase."
+            )
             return
         playerids = [x["user"]["_id"] for x in players]
-        default = client.DATABASE["user"].find_one({"auid": str(ctx.author.id)})
         if default["TWUser"] not in playerids:
             if default["TWUser"] == "":
                 default["TWUser"] = None
@@ -764,8 +761,6 @@ async def notify(ctx, gameurl):
         else:
             await interaction.response.send_message(f"You are not the original author")
 
-    if "twilightwars" not in gameurl:
-        gameurl = "https://www.twilightwars.com/games/" + gameurl
     try:  # Uses aiohttp to get the information about the game (it does this twice just in case someone only sent the Game ID rather than the URL
         async with client.session.get(gameurl + "/players") as players:
             log, gamesummary, players = [
@@ -784,8 +779,31 @@ async def notify(ctx, gameurl):
             ):  # Just in case either private games get patched or someone sends a valid URL that leads to no game (it is possible)
                 raise ()
     except:
-        await ctx.followup.send(f"Could not find: {gameurl}")
-        return
+        try:
+            async with client.session.get(
+                "https://www.twilightwars.com/games/" + gameurl + "/players"
+            ) as players:
+                gameurl = "https://www.twilightwars.com/games/" + gameurl
+                log, gamesummary, players = [
+                    json.loads(x)
+                    for x in await asyncio.gather(
+                        fetch(client.session, gameurl + "/log"),
+                        fetch(client.session, gameurl + "/summary"),
+                        fetch(client.session, gameurl + "/players"),
+                    )
+                ]
+                playeroptions1 = [
+                    (x["user"]["username"].strip(" "), x["user"]["_id"])
+                    for x in players
+                ]
+                if players == []:
+                    raise ()
+        except:
+            await ctx.followup.send(f"Could not find: {gameurl}")
+            await ctx.followup.send(
+                f"Please note that the bot cannot find games in the lobby phase."
+            )
+            return
 
     playeroptions = [
         disnake.SelectOption(label=x[0], value=x[1]) for x in playeroptions1
@@ -966,13 +984,6 @@ async def update():
                 + gamename
                 + " has ended, so your notifications have been automatically removed"
             )
-            await client.channel2.send(
-                f"<@"
-                + "> <@".join(peopleinvolved)
-                + ">\n"
-                + gamename
-                + " has ended, so your notifications have been automatically removed"
-            )
             client.DATABASE["games"].delete_one({"gameurl": gameurl})
         for i in range(1, 5):
             if str(i) in game.keys():
@@ -1033,20 +1044,12 @@ async def update():
                             f"The game is waiting for {waitingplayername} <@{'> <@'.join(game['0'][waitingplayer].split(','))}>",
                             embed=embed,
                         )
-                        await client.channel2.send(
-                            f"The game is waiting for {waitingplayername} <@{'> <@'.join(game['0'][waitingplayer].split(','))}>",
-                            embed=embed,
-                        )
                         print(f"{waitingplayername} was notified")
                     # else:
                     # print(waitingplayername+" didn't receive a notification.")
                     if "1" in game.keys():
                         if game["1"] != "":
                             await client.channel.send(
-                                f"<@{'> <@'.join(game['1'].split(','))}> The game is waiting on {waitingplayername}",
-                                embed=embed,
-                            )
-                            await client.channel2.send(
                                 f"<@{'> <@'.join(game['1'].split(','))}> The game is waiting on {waitingplayername}",
                                 embed=embed,
                             )
@@ -1099,10 +1102,6 @@ async def update():
                                 f"<@{'> <@'.join(game['1'].split(','))}> The game is waiting on {waitingplayername}",
                                 embed=embed,
                             )
-                            await client.channel2.send(
-                                f"<@{'> <@'.join(game['1'].split(','))}> The game is waiting on {waitingplayername}",
-                                embed=embed,
-                            )
                 client.DATABASE["games"].update_one(
                     {"gameurl": gameurl},
                     {
@@ -1134,15 +1133,9 @@ async def update():
                                             await client.channel.send(
                                                 f"<@{'> <@'.join(game['2'].split(','))}>\nTrade Strategy Card played in {gamename}"
                                             )
-                                            await client.channel2.send(
-                                                f"<@{'> <@'.join(game['2'].split(','))}>\nTrade Strategy Card played in {gamename}"
-                                            )
                                 if "3" in game.keys():
                                     if game["3"] != "":
                                         await client.channel.send(
-                                            f"<@{'> <@'.join(game['3'].split(','))}>\n{log[count]['details']['strategyCard']} Strategy Card played in {gamename}"
-                                        )
-                                        await client.channel2.send(
                                             f"<@{'> <@'.join(game['3'].split(','))}>\n{log[count]['details']['strategyCard']} Strategy Card played in {gamename}"
                                         )
                             events.append(
@@ -1162,22 +1155,12 @@ async def update():
                     await client.channel.send(
                         f"<@{'> <@'.join(game['4'].split(','))}>\n{i.title()[:-1]} in {gamename}"
                     )
-                    await client.channel2.send(
-                        f"<@{'> <@'.join(game['4'].split(','))}>\n{i.title()[:-1]} in {gamename}"
-                    )
 
     gameAsync = [getgames(x) for x in games]
     await asyncio.gather(*gameAsync)  # Does all the games asynchronously
     if len(client.deleted) < len(gameAsync) / 10:
         for gameurl, gamename, peopleinvolved in client.deleted:
             await client.channel.send(
-                f"<@"
-                + "> <@".join(peopleinvolved)
-                + ">\n"
-                + gamename
-                + " has mysteriously disappeared"
-            )
-            await client.channel2.send(
                 f"<@"
                 + "> <@".join(peopleinvolved)
                 + ">\n"
@@ -1201,7 +1184,6 @@ async def update():
 async def on_ready():
 
     client.channel = await client.fetch_channel(970285338901745695)
-    client.channel2 = await client.fetch_channel(868269160361254972)
     client.dmchannel = await client.fetch_user(560022746973601792)
     client.dmchannel = await client.dmchannel.create_dm()
     await client.dmchannel.send(f"CHOO")
