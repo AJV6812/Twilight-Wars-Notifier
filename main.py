@@ -1163,6 +1163,7 @@ async def update():
         await client.dmchannel.send(f"Bot failed, restarting.")
         await client.session.close()
         await asyncio.sleep(60*10)
+        client.session = aiohttp.ClientSession()
         await update.restart()
         return
     if len(client.deleted) < len(gameAsync) / 10:
