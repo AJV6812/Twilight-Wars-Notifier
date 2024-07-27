@@ -665,7 +665,7 @@ async def config(ctx):
                 )
             )
     if not done_games:
-        await ctx.followup.send("No notifications found")
+        await ctx.followup.send("No notifications found to configure. Please make a notification with /notify.")
         return None
     select = disnake.ui.Select(
         placeholder="Pick a notification...",
