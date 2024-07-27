@@ -467,7 +467,7 @@ async def outputnotifications(auid):
                 name=ngame["gamename"], value="\n".join(value), inline=False
             )
     if not done_games:
-        embed.add_field("No games found.")
+        embed.add_field(name = "No games found.", value = "")
     return embed
 
 
