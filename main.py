@@ -448,9 +448,11 @@ async def outputnotifications(auid):
             inline=False,
         )
     games = client.DATABASE["games"].find()
+    done_games = False
     for ngame in games:
         value = []
         if auid in ngame["users"].split(","):
+            done_games = True
             for i in range(1, 5):
                 if str(i) in ngame.keys():
                     if auid in ngame[str(i)].split(","):
@@ -464,6 +466,8 @@ async def outputnotifications(auid):
             embed.add_field(
                 name=ngame["gamename"], value="\n".join(value), inline=False
             )
+    if not done_games:
+        embed.add_field("No games found.")
     return embed
 
 
@@ -649,8 +653,10 @@ async def config(ctx):
     start = time.time()
     games = client.DATABASE["games"].find()
     options = []
+    done_games = False;
     for game in games:
         if str(ctx.author.id) in game["users"].split(","):
+            done_games = True;
             options.append(
                 disnake.SelectOption(
                     label=game["gamename"],
@@ -658,6 +664,9 @@ async def config(ctx):
                     value=game["gameurl"],
                 )
             )
+    if not done_games:
+        await ctx.followup.send("No notifications found")
+        return None
     select = disnake.ui.Select(
         placeholder="Pick a notification...",
         min_values=1,
