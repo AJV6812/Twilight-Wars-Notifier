@@ -942,7 +942,7 @@ async def update():
         "green": disnake.Colour.green(),
         "blue": disnake.Colour.blue(),
         "orange": disnake.Colour.orange(),
-        "pin": disnake.Colour.fuchsia()
+        "pink": disnake.Colour.fuchsia()
     }
     games = client.DATABASE["games"].find()
     print()
@@ -976,7 +976,6 @@ async def update():
             peopleinvolved = []
             peopleinvolved = game["users"].split(",")
             client.deleted.append(tuple([gameurl, gamename, peopleinvolved]))
-            print("Sourced")
             print(gameurl)
             print(game)
             return
@@ -1180,7 +1179,7 @@ async def update():
         client.session = aiohttp.ClientSession()
         await update.restart()
         return
-    if len(client.deleted) < len(gameAsync) / 10:
+    if len(client.deleted)# < len(gameAsync) / 10:
         for gameurl, gamename, peopleinvolved in client.deleted:
             await client.channel.send(
                 f"<@"
