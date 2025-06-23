@@ -1181,7 +1181,7 @@ async def update():
         return
     if len(client.deleted):# < len(gameAsync) / 10:
         for gameurl, gamename, peopleinvolved in client.deleted:
-            await client.channel.send(
+            await client.dmchannel.send(
                 f"<@"
                 + "> <@".join(peopleinvolved)
                 + ">\n"
@@ -1189,7 +1189,6 @@ async def update():
                 + " has mysteriously disappeared"
             )
             client.DATABASE["games"].delete_one({"gameurl": gameurl})
-            return
     # print("Update concluded")
     # print("Current users: "+", ".join([str((await client.fetch_user(int(x))).name) for x in users]))
     print("Number of users: " + str(len(users)))
