@@ -8,6 +8,7 @@ import pymongo
 import aiohttp
 import sys
 import requests
+import traceback
 
 client = commands.InteractionBot()
 dbclient = pymongo.MongoClient(
@@ -975,6 +976,7 @@ async def update():
             peopleinvolved = []
             peopleinvolved = game["users"].split(",")
             client.deleted.append(tuple([gameurl, gamename, peopleinvolved]))
+            print("Sourced")
             print(gameurl)
             print(game)
             return
