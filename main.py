@@ -941,6 +941,7 @@ async def update():
         "green": disnake.Colour.green(),
         "blue": disnake.Colour.blue(),
         "orange": disnake.Colour.orange(),
+        "pink": disnake.Colour.pink()
     }
     games = client.DATABASE["games"].find()
     print()
@@ -1168,9 +1169,10 @@ async def update():
     gameAsync = [getgames(x) for x in games]
     try:
         await asyncio.gather(*gameAsync)  # Does all the games asynchronously
-    except:
-        raise
+    except Exception as e:
+        
         await client.dmchannel.send(f"Bot failed, restarting.")
+        await client.dmchannel.send(e.message)
         await client.session.close()
         await asyncio.sleep(60*10)
         client.session = aiohttp.ClientSession()
