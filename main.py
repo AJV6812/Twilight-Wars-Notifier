@@ -941,7 +941,7 @@ async def update():
         "green": disnake.Colour.green(),
         "blue": disnake.Colour.blue(),
         "orange": disnake.Colour.orange(),
-        "pink": disnake.Colour.pink()
+        "pin": disnake.Colour.fuchsia()
     }
     games = client.DATABASE["games"].find()
     print()
@@ -1170,7 +1170,6 @@ async def update():
     try:
         await asyncio.gather(*gameAsync)  # Does all the games asynchronously
     except Exception as e:
-        
         await client.dmchannel.send(f"Bot failed, restarting.")
         await client.dmchannel.send(e.message)
         await client.session.close()
