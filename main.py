@@ -1171,7 +1171,8 @@ async def update():
         await asyncio.gather(*gameAsync)  # Does all the games asynchronously
     except Exception as e:
         await client.dmchannel.send(f"Bot failed, restarting.")
-        await client.dmchannel.send(str(e)[:min(len(str(e))-1, 1000)])
+        message = str(traceback.format_exc())
+        await client.dmchannel.send(message[:min(len(message), 1000)])
         await client.session.close()
         await asyncio.sleep(60*10)
         client.session = aiohttp.ClientSession()
