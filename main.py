@@ -1169,13 +1169,14 @@ async def update():
     try:
         await asyncio.gather(*gameAsync)  # Does all the games asynchronously
     except:
+        raise
         await client.dmchannel.send(f"Bot failed, restarting.")
         await client.session.close()
         await asyncio.sleep(60*10)
         client.session = aiohttp.ClientSession()
         await update.restart()
         return
-    if len(client.deleted) < len(gameAsync) / 2:
+    if len(client.deleted) < len(gameAsync) / 10:
         for gameurl, gamename, peopleinvolved in client.deleted:
             await client.channel.send(
                 f"<@"
