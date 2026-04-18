@@ -9,6 +9,9 @@ import aiohttp
 import sys
 import requests
 import traceback
+import dotenv
+
+dotenv.load_dotenv()
 
 client = commands.InteractionBot()
 dbclient = pymongo.MongoClient(
@@ -69,6 +72,13 @@ async def quicknotify(ctx):
     author = ctx.author.id
     await ctx.response.defer()
 
+    try:
+        await ctx.author.add_roles(client.user_role)
+    except Exception as e:
+        await client.dmchannel.send(e)
+        pass
+
+ 
     try:
 
         default = client.DATABASE["user"].find_one({"auid": str(author)})
@@ -343,8 +353,11 @@ async def bulknotify(
     gameurl25=None,
 ):
     await ctx.response.defer()
-    if ctx.author is disnake.Member:
+    try:
         await ctx.author.add_roles(client.user_role)
+    except Exception as e:
+        await client.dmchannel.send(e)
+        pass
 
     gameurls = [
         gameurl1,
@@ -747,6 +760,12 @@ async def setnotification(user, gameurl, log, gamesummary, players, auid):
 )
 async def notify(ctx, gameurl):
     await ctx.response.defer(ephemeral=False)
+    try:
+        await ctx.author.add_roles(client.user_role)
+    except Exception as e:
+        await client.dmchannel.send(e)
+        pass
+
 
     async def finish(
         interaction: disnake.MessageInteraction,
