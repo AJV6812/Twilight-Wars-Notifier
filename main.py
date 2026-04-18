@@ -343,6 +343,9 @@ async def bulknotify(
     gameurl25=None,
 ):
     await ctx.response.defer()
+    if ctx.author is disnake.Member:
+        await ctx.author.add_roles(client.user_role)
+
     gameurls = [
         gameurl1,
         gameurl2,
@@ -1207,6 +1210,7 @@ async def on_ready():
     client.channel = await client.fetch_channel(970285338901745695)
     client.dmchannel = await client.fetch_user(560022746973601792)
     client.dmchannel = await client.dmchannel.create_dm()
+    client.user_role = await (await client.fetch_guild(970285134010011718)).fetch_role(1494882252750983300)
     await client.dmchannel.send(f"CHOO")
     # await client.channel.send("I'm alive")
     # await asyncio.sleep(30)
